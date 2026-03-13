@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   description: "Simulate and visualize the blast radius of compromised Azure resources.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

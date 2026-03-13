@@ -78,7 +78,7 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   };
 
   return (
-    <aside className="w-96 glass bg-card/80 border-l border-white/10 flex flex-col shadow-2xl relative z-20">
+    <aside className="w-full h-full glass bg-card/80 flex flex-col shadow-2xl relative z-20">
       {/* Header */}
       <div className="p-5 border-b border-white/10">
         <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">

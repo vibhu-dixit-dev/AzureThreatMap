@@ -37,12 +37,25 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
   useEffect(() => {
     if (!containerRef.current || !data) return;
 
-    // Convert our standard GraphData to cytoscape elements
+    // Filter out unconnected nodes (nodes with no edges)
+    const connectedNodeIds = new Set<string>();
+    data.edges.forEach(e => {
+      connectedNodeIds.add(e.source);
+      connectedNodeIds.add(e.target);
+    });
+
+    // Only include nodes that participate in at least one edge
+    const filteredEdges = data.edges.filter(
+      e => connectedNodeIds.has(e.source) && connectedNodeIds.has(e.target)
+    );
+
     const elements = [
-      ...data.nodes.map(n => ({
-        data: { id: n.id, label: n.label, type: n.type, riskScore: n.riskScore }
-      })),
-      ...data.edges.map(e => ({
+      ...data.nodes
+        .filter(n => connectedNodeIds.has(n.id))
+        .map(n => ({
+          data: { id: n.id, label: n.label, type: n.type, riskScore: n.riskScore }
+        })),
+      ...filteredEdges.map(e => ({
         data: { id: e.id, source: e.source, target: e.target, label: e.label || e.type, type: e.type }
       }))
     ];
