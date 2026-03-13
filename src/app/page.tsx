@@ -1,25 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import GraphCanvas from "@/components/GraphCanvas";
 import SimulatePanel from "@/components/SimulatePanel";
 import ImportModal from "@/components/ImportModal";
+import { UserIdentity } from "@/lib/types";
 
 export default function Dashboard() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [identity, setIdentity] = useState<UserIdentity | undefined>(undefined);
+
+  // Fetch current environment and identity on mount
+  useEffect(() => {
+    fetch('/api/environment')
+      .then(res => res.json())
+      .then(data => {
+        if (data.identity) {
+          setIdentity(data.identity);
+        }
+      })
+      .catch(err => console.error("Identity fetch error:", err));
+  }, []);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden relative">
       <ImportModal 
         isOpen={isImportModalOpen} 
-        onClose={() => setIsImportModalOpen(false)} 
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={(newIdentity: UserIdentity) => {
+          if (newIdentity) setIdentity(newIdentity);
+          setIsImportModalOpen(false);
+          // Reload to refresh the graph data which is now stored server-side per user
+          window.location.reload(); 
+        }}
       />
 
       {/* Sidebar Navigation */}
-      <Sidebar onImportClick={() => setIsImportModalOpen(true)} />
+      <Sidebar 
+        onImportClick={() => setIsImportModalOpen(true)} 
+        identity={identity}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative z-10 min-w-0 ml-16 md:ml-56 transition-all duration-300">

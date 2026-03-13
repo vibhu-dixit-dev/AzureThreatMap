@@ -1,26 +1,27 @@
-import { NextResponse } from 'next/server';
-import { getCurrentEnvironment } from "@/app/api/environment/state";
+import { getCurrentEnvironment, getUserIdentity } from "@/app/api/environment/state";
 import { getSessionId } from '@/lib/auth';
-import { GraphEdge, GraphNode } from '@/lib/types';
+import { GraphEdge, GraphNode, UserIdentity } from '@/lib/types';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   const sessionId = await getSessionId();
   const env = getCurrentEnvironment(sessionId);
+  const identity = getUserIdentity(sessionId);
 
   // Build set of node IDs that participate in at least one edge
   const connectedIds = new Set<string>();
-  env.edges.forEach(e => {
+  env.edges.forEach((e: GraphEdge) => {
     connectedIds.add(e.source);
     connectedIds.add(e.target);
   });
 
   // Return only connected nodes — strip all isolated vertices
   const filteredData = {
-    nodes: env.nodes.filter(n => connectedIds.has(n.id)),
+    nodes: env.nodes.filter((n: GraphNode) => connectedIds.has(n.id)),
     edges: env.edges,
   };
 
-  return NextResponse.json(filteredData);
+  return NextResponse.json({ graph: filteredData, identity });
 }
 
 

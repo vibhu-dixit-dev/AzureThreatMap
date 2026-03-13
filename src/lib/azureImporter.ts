@@ -1,4 +1,4 @@
-import { GraphData, GraphNode, GraphEdge, NodeType } from "./types";
+import { GraphData, GraphNode, GraphEdge, NodeType, UserIdentity } from "./types";
 
 // ─── Token Helpers ────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ export async function importAzureEnvironment(
   tenantId: string,
   clientId: string,
   clientSecret: string
-): Promise<GraphData> {
+): Promise<{ graph: GraphData, identity: UserIdentity }> {
   // Two tokens: one for ARM, one for Microsoft Graph
   const [armToken, graphToken] = await Promise.all([
     getToken(tenantId, clientId, clientSecret, "https://management.azure.com/.default"),
@@ -57,6 +57,17 @@ export async function importAzureEnvironment(
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
   const nodeIds = new Set<string>();
+
+  // Fetch Identity Details
+  const [tenantInfo, spInfo] = await Promise.all([
+    armGet(`https://management.azure.com/tenants?api-version=2020-01-01`, armToken),
+    graphToken ? graphGet(`/servicePrincipals(appId='${clientId}')`, graphToken) : null
+  ]);
+
+  const identity: UserIdentity = {
+    name: spInfo?.displayName || "Service Principal",
+    tenant: tenantInfo?.value?.find((t: any) => t.tenantId === tenantId)?.displayName || tenantId
+  };
 
   function addNode(node: GraphNode) {
     if (!nodeIds.has(node.id)) {
@@ -227,5 +238,5 @@ export async function importAzureEnvironment(
     addEdge({ id: "edge-dummy", source: "sp-identity", target: "dummy-rg", type: "ACCESS" });
   }
 
-  return { nodes, edges };
+  return { graph: { nodes, edges }, identity };
 }

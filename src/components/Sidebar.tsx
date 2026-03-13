@@ -1,11 +1,30 @@
-"use strict";
-import { LayoutDashboard, ShieldAlert, Settings, CloudUpload, User } from "lucide-react";
+import { useState } from "react";
+import { 
+  LayoutDashboard, 
+  ShieldAlert, 
+  Settings, 
+  CloudUpload, 
+  User, 
+  Monitor, 
+  Palette, 
+  Maximize2, 
+  ChevronRight,
+  LogOut
+} from "lucide-react";
+import { UserIdentity } from "@/lib/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
   onImportClick: () => void;
+  identity?: UserIdentity;
 }
 
-export default function Sidebar({ onImportClick }: SidebarProps) {
+export default function Sidebar({ onImportClick, identity }: SidebarProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const userDisplayName = identity?.name || "Security Admin";
+  const userTenant = identity?.tenant || "Demo Tenant";
+
   return (
     <aside className="fixed inset-y-0 left-0 w-16 md:w-56 bg-card/60 backdrop-blur-2xl border-r border-white/5 flex flex-col z-20 transition-all duration-300">
       <div className="h-14 md:h-16 flex items-center justify-center md:justify-start md:px-5 border-b border-white/5">
@@ -23,15 +42,39 @@ export default function Sidebar({ onImportClick }: SidebarProps) {
         <NavItem icon={ShieldAlert} label="Simulations" />
       </nav>
 
-      <div className="p-4 border-t border-white/5 mt-auto hidden md:block">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500 flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
+      <div className="p-4 border-t border-white/5 mt-auto hidden md:block relative">
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="absolute bottom-full left-4 mb-2 w-48 bg-card/90 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-30"
+            >
+              <div className="p-2 flex flex-col gap-0.5">
+                <MenuButton icon={Palette} label="Theme change" />
+                <MenuButton icon={Monitor} label="Dev tools position" />
+                <MenuButton icon={Maximize2} label="UI size" />
+                <div className="h-px bg-white/5 my-1" />
+                <MenuButton icon={Settings} label="Other preferences" />
+                <MenuButton icon={LogOut} label="Log out" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={`flex items-center gap-3 p-2 rounded-lg transition-all cursor-pointer ${isMenuOpen ? 'bg-white/10' : 'bg-white/5 hover:bg-white/10'}`}
+        >
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-primary flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-xl shadow-primary/20">
+            {userDisplayName.charAt(0).toUpperCase()}
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-white">Security Admin</span>
-            <span className="text-xs text-muted-foreground">Demo Tenant</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-medium text-white truncate">{userDisplayName}</span>
+            <span className="text-xs text-muted-foreground truncate">{userTenant}</span>
           </div>
+          <ChevronRight className={`w-3.5 h-3.5 ml-auto text-muted-foreground transition-transform duration-300 ${isMenuOpen ? 'rotate-90' : ''}`} />
         </div>
       </div>
       <div className="md:hidden mt-auto py-4 flex flex-col gap-2 px-3">
@@ -55,6 +98,15 @@ function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, la
       {active && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
       )}
+    </button>
+  );
+}
+
+function MenuButton({ icon: Icon, label }: { icon: any, label: string }) {
+  return (
+    <button className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-white transition-all">
+      <Icon className="w-3.5 h-3.5" />
+      {label}
     </button>
   );
 }

@@ -2,12 +2,15 @@ import { useState } from "react";
 import { X, CloudUpload, Key, FileJson, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { UserIdentity } from "@/lib/types";
+
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onImportSuccess?: (identity: UserIdentity) => void;
 }
 
-export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
+export default function ImportModal({ isOpen, onClose, onImportSuccess }: ImportModalProps) {
   const [activeTab, setActiveTab] = useState<"oauth" | "json">("oauth");
   const [isConnnecting, setIsConnecting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -42,11 +45,17 @@ export default function ImportModal({ isOpen, onClose }: ImportModalProps) {
 
       setIsSuccess(true);
       
-      // Close after short delay and reload to refresh graph data
+      // Pass the new identity back to the parent
+      if (onImportSuccess && data.identity) {
+        onImportSuccess(data.identity);
+      }
+      
+      // Close after short delay
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
-        window.location.reload();
+        // Skip reload if we are updating state dynamically, or keep it if graph needs full reset
+        // window.location.reload(); 
       }, 1500);
       
     } catch (err: any) {

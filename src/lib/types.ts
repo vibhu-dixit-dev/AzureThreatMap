@@ -36,6 +36,11 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+export interface UserIdentity {
+  name: string;
+  tenant: string;
+}
+
 export type RiskLevel = 'Low' | 'Medium' | 'High' | 'Critical';
 
 export interface AttackStep {
