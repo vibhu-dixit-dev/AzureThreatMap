@@ -70,15 +70,15 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'background-color': (ele) => typeColors[ele.data('type')] || '#94a3b8',
             'label': 'data(label)',
             'color': '#f8fafc',
-            'font-size': '10px',
+            'font-size': '9px',
             'font-family': 'Inter, sans-serif',
             'text-valign': 'bottom',
             'text-halign': 'center',
-            'text-margin-y': 4,
-            'border-width': 2,
+            'text-margin-y': 3,
+            'border-width': 1.5,
             'border-color': 'rgba(255,255,255,0.1)',
-            'width': 30,
-            'height': 30,
+            'width': 24,
+            'height': 24,
             'transition-property': 'background-color, line-color, target-arrow-color',
             'transition-duration': 300
           }
@@ -92,10 +92,10 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
             'label': 'data(label)',
-            'font-size': '8px',
+            'font-size': '7.5px',
             'color': '#94a3b8',
             'text-rotation': 'autorotate',
-            'text-margin-y': -5,
+            'text-margin-y': -4,
             'transition-property': 'background-color, line-color, target-arrow-color, width',
             'transition-duration': 300
           }
@@ -136,9 +136,9 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       ],
       layout: {
         name: 'cose',
-        padding: 50,
-        nodeRepulsion: () => 4000,
-        idealEdgeLength: () => 100,
+        padding: 40,
+        nodeRepulsion: () => 3500,
+        idealEdgeLength: () => 80,
         edgeElasticity: () => 100,
       },
       userZoomingEnabled: true,
@@ -212,13 +212,13 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       )}
 
       {/* Legend overlay */}
-      <div className="absolute bottom-4 left-4 glass-card p-3 rounded-lg flex flex-col gap-2 pointer-events-none">
-        <h4 className="text-xs font-semibold text-white mb-1 uppercase tracking-wider">Legend</h4>
-        <div className="flex flex-wrap gap-x-4 gap-y-2 max-w-[400px]">
+      <div className="absolute bottom-3 left-3 glass-card p-2 rounded-md flex flex-col gap-1.5 pointer-events-none">
+        <h4 className="text-[10px] font-semibold text-white mb-0.5 uppercase tracking-wider">Legend</h4>
+        <div className="flex flex-wrap gap-x-3 gap-y-1.5 max-w-[320px]">
           {Object.entries(typeColors).map(([type, color]) => (
-            <div key={type} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-xs text-muted-foreground">{type}</span>
+            <div key={type} className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+              <span className="text-[10px] text-muted-foreground">{type}</span>
             </div>
           ))}
         </div>

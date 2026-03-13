@@ -80,9 +80,9 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   return (
     <aside className="w-full h-full glass bg-card/80 flex flex-col shadow-2xl relative z-20">
       {/* Header */}
-      <div className="p-5 border-b border-white/10">
-        <h2 className="text-lg font-heading font-semibold text-white flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-primary" />
+      <div className="p-4 border-b border-white/10">
+        <h2 className="text-base font-heading font-semibold text-white flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-primary" />
           Simulation Control
         </h2>
         <p className="text-sm text-muted-foreground mt-1">Select an identity or resource to simulate a breach.</p>
@@ -101,12 +101,12 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
 
         {/* Target Selected */}
         {selectedNode && !result && (
-          <div className="p-5 space-y-6">
-            <div className="glass-card p-4 rounded-xl border border-white/10 bg-white/5">
-              <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 font-semibold">Selected Target</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <ShieldAlert className="w-5 h-5 text-primary" />
+          <div className="p-4 space-y-4">
+            <div className="glass-card p-3 rounded-lg border border-white/10 bg-white/5">
+              <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Selected Target</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                  <ShieldAlert className="w-4 h-4 text-primary" />
                 </div>
                 <div>
                   <div className="text-base font-medium text-white truncate max-w-[200px]">{selectedNode.label}</div>
@@ -118,7 +118,7 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
             <button
               onClick={runSimulation}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50 text-sm"
             >
               {loading
                 ? <><div className="animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full" /> Simulating...</>
@@ -132,16 +132,16 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
         {result && (
           <div className="flex flex-col">
             {/* Score Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-red-900/30 to-red-800/10 border-b border-red-500/20 p-5 text-center">
+            <div className="relative overflow-hidden bg-gradient-to-br from-red-900/30 to-red-800/10 border-b border-red-500/20 p-4 text-center">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-400 to-yellow-400" />
-              <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-1 flex items-center justify-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Blast Radius Score
+              <h3 className="text-[10px] font-semibold text-red-400 uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" /> Blast Radius Score
               </h3>
-              <div className="flex items-end justify-center gap-1 mt-2">
-                <span className="text-5xl font-heading font-bold text-white">{result.totalRiskScore}</span>
-                <span className="text-2xl text-muted-foreground mb-1">/ {result.maxScore}</span>
+              <div className="flex items-end justify-center gap-1 mt-1">
+                <span className="text-4xl font-heading font-bold text-white">{result.totalRiskScore}</span>
+                <span className="text-xl text-muted-foreground mb-0.5">/ {result.maxScore}</span>
               </div>
-              <div className="mt-3 flex justify-center gap-2">
+              <div className="mt-2 text-xs flex justify-center gap-2">
                 {result.blastRadius.length} nodes reachable
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
             <div className="flex border-b border-white/10 px-4 gap-4">
               {([["overview", "Overview"], ["steps", "Attack Steps"], ["recs", `Recs (${result.recommendations.length})`]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={cn("py-3 text-xs font-medium border-b-2 transition-colors",
+                  className={cn("py-2.5 text-[11px] font-medium border-b-2 transition-colors",
                     activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-white"
                   )}>
                   {label}
@@ -164,9 +164,9 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(result.summary).filter(([, count]) => count > 0).map(([type, count]) => (
-                      <div key={type} className="glass-card bg-white/5 p-3 rounded-lg border border-white/5">
-                        <span className="text-2xl font-semibold text-white">{count}</span>
-                        <span className="text-xs text-muted-foreground block truncate">{type}</span>
+                      <div key={type} className="glass-card bg-white/5 p-2 rounded-lg border border-white/5">
+                        <span className="text-xl font-semibold text-white">{count}</span>
+                        <span className="text-[10px] text-muted-foreground block truncate">{type}</span>
                       </div>
                     ))}
                   </div>

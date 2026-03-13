@@ -7,8 +7,8 @@ interface SidebarProps {
 
 export default function Sidebar({ onImportClick }: SidebarProps) {
   return (
-    <aside className="fixed inset-y-0 left-0 w-16 md:w-64 bg-card/60 backdrop-blur-2xl border-r border-white/5 flex flex-col z-20 transition-all duration-300">
-      <div className="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-white/5">
+    <aside className="fixed inset-y-0 left-0 w-16 md:w-56 bg-card/60 backdrop-blur-2xl border-r border-white/5 flex flex-col z-20 transition-all duration-300">
+      <div className="h-14 md:h-16 flex items-center justify-center md:justify-start md:px-5 border-b border-white/5">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20">
           <ShieldAlert className="w-5 h-5 text-white" />
         </div>
@@ -17,7 +17,7 @@ export default function Sidebar({ onImportClick }: SidebarProps) {
         </span>
       </div>
 
-      <nav className="flex-1 py-6 flex flex-col gap-2 px-3">
+      <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
         <NavItem icon={LayoutDashboard} label="Dashboard" active />
         <NavItem icon={CloudUpload} label="Import Azure" onClick={onImportClick} />
         <NavItem icon={ShieldAlert} label="Simulations" />
@@ -49,8 +49,8 @@ function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, la
         ${active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-white'}
       `}
     >
-      <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground group-hover:text-white'}`} />
-      <span className="hidden md:block text-sm font-medium">{label}</span>
+      <Icon className={`w-4 h-4 ${active ? 'text-primary' : 'text-muted-foreground group-hover:text-white'}`} />
+      <span className="hidden md:block text-[13px] font-medium">{label}</span>
       
       {active && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />

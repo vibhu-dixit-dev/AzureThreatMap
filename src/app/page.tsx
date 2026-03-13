@@ -22,11 +22,11 @@ export default function Dashboard() {
       <Sidebar onImportClick={() => setIsImportModalOpen(true)} />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col relative z-10 min-w-0 ml-16 md:ml-64 transition-all duration-300">
+      <main className="flex-1 flex flex-col relative z-10 min-w-0 ml-16 md:ml-56 transition-all duration-300">
         {/* Topbar */}
-        <header className="h-14 md:h-16 flex items-center justify-between px-4 md:px-6 border-b border-white/5 bg-card/40 backdrop-blur-xl flex-shrink-0">
-          <h1 className="text-base md:text-xl font-heading font-semibold tracking-tight text-white flex items-center gap-2">
-            <span className="text-primary text-xl md:text-2xl">⚡</span>
+        <header className="h-12 md:h-14 flex items-center justify-between px-4 md:px-5 border-b border-white/5 bg-card/40 backdrop-blur-xl flex-shrink-0">
+          <h1 className="text-sm md:text-lg font-heading font-semibold tracking-tight text-white flex items-center gap-2">
+            <span className="text-primary text-lg md:text-xl">⚡</span>
             <span className="hidden sm:inline">AzureThreatMap Sandbox</span>
             <span className="sm:hidden">AzureThreatMap</span>
           </h1>
@@ -49,7 +49,7 @@ export default function Dashboard() {
           </div>
 
           {/* Right Simulation Panel */}
-          <div className="w-full md:w-80 lg:w-96 flex-shrink-0 border-t md:border-t-0 md:border-l border-white/5 overflow-y-auto">
+          <div className="w-full md:w-72 lg:w-80 flex-shrink-0 border-t md:border-t-0 md:border-l border-white/5 overflow-y-auto">
             <SimulatePanel 
               selectedNodeId={selectedNodeId} 
               onSimulationComplete={setSimulationResult}
