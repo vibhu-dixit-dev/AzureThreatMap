@@ -31,7 +31,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
   useEffect(() => {
     fetch('/api/environment')
       .then(res => res.json())
-      .then(setData);
+      .then(res => setData(res.graph || res)); // Fallback to res for backward compatibility
   }, []);
 
   useEffect(() => {

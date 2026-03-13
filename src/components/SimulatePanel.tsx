@@ -38,7 +38,9 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   const [activeTab, setActiveTab] = useState<"overview" | "steps" | "recs">("overview");
 
   useEffect(() => {
-    fetch('/api/environment').then(res => res.json()).then(setData);
+    fetch('/api/environment')
+      .then(res => res.json())
+      .then(res => setData(res.graph || res));
   }, []);
 
   const selectedNode = data?.nodes.find(n => n.id === selectedNodeId);
