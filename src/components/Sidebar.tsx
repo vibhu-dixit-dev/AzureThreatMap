@@ -13,7 +13,6 @@ import {
   LogOut
 } from "lucide-react";
 import { UserIdentity } from "@/lib/types";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
   onImportClick: () => void;
@@ -44,25 +43,18 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-white/5 mt-auto hidden md:block relative">
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="absolute bottom-full left-4 mb-2 w-48 bg-card/90 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-30"
-            >
-              <div className="p-2 flex flex-col gap-0.5">
-                <MenuButton icon={Palette} label="Theme change" />
-                <MenuButton icon={Monitor} label="Dev tools position" />
-                <MenuButton icon={Maximize2} label="UI size" />
-                <div className="h-px bg-white/5 my-1" />
-                <MenuButton icon={Settings} label="Other preferences" />
-                <MenuButton icon={LogOut} label="Log out" />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {isMenuOpen && (
+          <div className="absolute bottom-full left-4 mb-2 w-48 bg-card/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-30 animate-in fade-in slide-in-from-bottom-2 duration-200">
+            <div className="p-2 flex flex-col gap-0.5">
+              <MenuButton icon={Palette} label="Theme change" />
+              <MenuButton icon={Monitor} label="Dev tools position" />
+              <MenuButton icon={Maximize2} label="UI size" />
+              <div className="h-px bg-white/5 my-1" />
+              <MenuButton icon={Settings} label="Other preferences" />
+              <MenuButton icon={LogOut} label="Log out" />
+            </div>
+          </div>
+        )}
 
         <div 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
