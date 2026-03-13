@@ -87,11 +87,13 @@ export class BlastRadiusEngine {
     }
 
     // Build attack steps
-    const attackSteps: AttackStep[] = [
-      { phase: 'Initial Access', nodes: phaseBuckets[1].nodes, edges: phaseBuckets[1].edges },
-      { phase: 'Lateral Movement', nodes: phaseBuckets[2].nodes, edges: phaseBuckets[2].edges },
-      { phase: 'Privilege Escalation', nodes: phaseBuckets[3].nodes, edges: phaseBuckets[3].edges },
-    ].filter(s => s.nodes.length > 0);
+    const stepsData = [
+      { phase: 'Initial Access' as const, nodes: phaseBuckets[1].nodes, edges: phaseBuckets[1].edges },
+      { phase: 'Lateral Movement' as const, nodes: phaseBuckets[2].nodes, edges: phaseBuckets[2].edges },
+      { phase: 'Privilege Escalation' as const, nodes: phaseBuckets[3].nodes, edges: phaseBuckets[3].edges },
+    ];
+
+    const attackSteps: AttackStep[] = stepsData.filter(s => s.nodes.length > 0);
 
     // Total risk
     let totalRiskScore = 0;
