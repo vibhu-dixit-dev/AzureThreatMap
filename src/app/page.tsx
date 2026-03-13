@@ -7,7 +7,10 @@ import SimulatePanel from "@/components/SimulatePanel";
 import ImportModal from "@/components/ImportModal";
 import { UserIdentity } from "@/lib/types";
 
+import { useUI } from "@/context/UIContext";
+
 export default function Dashboard() {
+  const { theme, uiSize, devToolsPosition } = useUI();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -26,14 +29,13 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden relative">
+    <div className={`flex h-screen w-full bg-background overflow-hidden relative ${theme}`}>
       <ImportModal 
         isOpen={isImportModalOpen} 
         onClose={() => setIsImportModalOpen(false)}
         onImportSuccess={(newIdentity: UserIdentity) => {
           if (newIdentity) setIdentity(newIdentity);
           setIsImportModalOpen(false);
-          // Reload to refresh the graph data which is now stored server-side per user
           window.location.reload(); 
         }}
       />
@@ -61,7 +63,7 @@ export default function Dashboard() {
         </header>
 
         {/* Workspace Layout */}
-        <div className="flex-1 flex flex-col md:flex-row w-full relative min-h-0">
+        <div className={`flex-1 flex w-full relative min-h-0 ${devToolsPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
           {/* Graph Visualization */}
           <div className="flex-1 relative bg-[#09090b]/40 min-h-[300px] md:min-h-0">
             <GraphCanvas 
@@ -71,17 +73,22 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Right Simulation Panel */}
-          <div className="w-full md:w-72 lg:w-80 flex-shrink-0 border-t md:border-t-0 md:border-l border-white/5 overflow-y-auto">
-            <SimulatePanel 
-              selectedNodeId={selectedNodeId} 
-              onSimulationComplete={setSimulationResult}
-              onReset={() => {
-                setSelectedNodeId(null);
-                setSimulationResult(null);
-              }}
-            />
-          </div>
+          {/* Simulation Panel */}
+          {devToolsPosition !== 'hidden' && (
+            <div className={`
+              flex-shrink-0 border-white/5 overflow-y-auto transition-all duration-300
+              ${devToolsPosition === 'right' ? 'w-full md:w-72 lg:w-80 border-t md:border-t-0 md:border-l' : 'h-1/3 w-full border-t'}
+            `}>
+              <SimulatePanel 
+                selectedNodeId={selectedNodeId} 
+                onSimulationComplete={setSimulationResult}
+                onReset={() => {
+                  setSelectedNodeId(null);
+                  setSimulationResult(null);
+                }}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

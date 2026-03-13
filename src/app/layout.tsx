@@ -24,6 +24,8 @@ export const viewport = {
   maximumScale: 1,
 };
 
+import { UIProvider } from "@/context/UIContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,11 +33,13 @@ export default function RootLayout({
 }>) {
   ensureSession();
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
         className={`${inter.variable} ${outfit.variable} antialiased`}
       >
-        {children}
+        <UIProvider>
+          {children}
+        </UIProvider>
       </body>
     </html>
   );
