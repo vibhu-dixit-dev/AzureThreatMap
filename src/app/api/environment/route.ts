@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { getCurrentEnvironment } from "@/app/api/environment/state";
+import { getSessionId } from '@/lib/auth';
+import { GraphEdge, GraphNode } from '@/lib/types';
 
 export async function GET() {
-  const env = getCurrentEnvironment();
+  const sessionId = await getSessionId();
+  const env = getCurrentEnvironment(sessionId);
 
   // Build set of node IDs that participate in at least one edge
   const connectedIds = new Set<string>();

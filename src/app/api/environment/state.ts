@@ -1,18 +1,18 @@
 import { GraphData } from "@/lib/types";
 import { mockAzureEnvironment } from "@/lib/mockData";
 
-// Native in-memory store for MVP demo purposes. 
-// A production app should use a true cache layer (Redis) or database.
-let currentState: GraphData | null = null;
+// Scoped in-memory store for demo purposes. 
+// Maps session IDs to their respective graph data.
+const userStates = new Map<string, GraphData>();
 
-export function getCurrentEnvironment(): GraphData {
-  return currentState || mockAzureEnvironment;
+export function getCurrentEnvironment(sessionId: string): GraphData {
+  return userStates.get(sessionId) || mockAzureEnvironment;
 }
 
-export function setCurrentEnvironment(data: GraphData) {
-  currentState = data;
+export function setCurrentEnvironment(sessionId: string, data: GraphData) {
+  userStates.set(sessionId, data);
 }
 
-export function resetEnvironment() {
-  currentState = null;
+export function resetEnvironment(sessionId: string) {
+  userStates.delete(sessionId);
 }

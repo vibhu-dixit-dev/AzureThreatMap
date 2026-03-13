@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { BlastRadiusEngine } from '@/lib/graphEngine';
 import { getCurrentEnvironment } from "@/app/api/environment/state";
+import { getSessionId } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,8 @@ export async function POST(req: Request) {
     }
 
     // Initialize graph engine with current dynamic environment
-    const environment = getCurrentEnvironment();
+    const sessionId = await getSessionId();
+    const environment = getCurrentEnvironment(sessionId);
     const engine = new BlastRadiusEngine(environment);
     
     // Calculate blast radius
