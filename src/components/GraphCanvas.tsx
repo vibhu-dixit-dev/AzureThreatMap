@@ -134,17 +134,21 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
           }
         }
       ],
-      layout: {
-        name: 'cose',
-        padding: 40,
-        nodeRepulsion: () => 3500,
-        idealEdgeLength: () => 80,
-        edgeElasticity: () => 100,
-      },
       userZoomingEnabled: true,
       userPanningEnabled: true,
       boxSelectionEnabled: false,
     });
+
+    const layout = cy.layout({
+      name: 'cose',
+      padding: 40,
+      nodeRepulsion: () => 3500,
+      idealEdgeLength: () => 80,
+      edgeElasticity: () => 100,
+      animate: false
+    } as cytoscape.LayoutOptions);
+    
+    layout.run();
 
     cy.on('tap', 'node', (evt) => {
       onNodeSelect(evt.target.id());
@@ -160,7 +164,11 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
     cyRef.current = cy;
 
     return () => {
+      layout.stop();
       cy.destroy();
+      if (cyRef.current === cy) {
+        cyRef.current = null;
+      }
     };
   }, [data]);
 
