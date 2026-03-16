@@ -228,13 +228,13 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
                 <span className="text-xl text-muted-foreground mb-0.5">/ {result.maxScore}</span>
               </div>
               <div className="mt-2 text-xs flex justify-center gap-2">
-                {result.blastRadius.length} nodes reachable
+                {result.blastRadius?.length ?? 0} nodes reachable
               </div>
             </div>
 
             {/* Tabs */}
             <div className="flex border-b border-white/10 px-4 gap-4">
-              {([["overview", "Overview"], ["steps", "Attack Steps"], ["recs", `Recs (${result.recommendations.length})`]] as const).map(([tab, label]) => (
+              {([["overview", "Overview"], ["steps", "Attack Steps"], ["recs", `Recs (${result.recommendations?.length ?? 0})`]] as const).map(([tab, label]) => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={cn("py-2.5 text-[11px] font-medium border-b-2 transition-colors",
                     activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-white"
@@ -259,7 +259,7 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
 
                   <div className="space-y-2">
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Risk Nodes</h3>
-                    {result.blastRadius
+                    {(result.blastRadius ?? [])
                       .filter(n => n.riskScore > 0)
                       .sort((a, b) => b.riskScore - a.riskScore)
                       .slice(0, 4)
@@ -277,10 +277,10 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
 
               {activeTab === "steps" && (
                 <div className="space-y-4">
-                  {result.attackSteps.length === 0 && (
+                  {(result.attackSteps?.length ?? 0) === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">No multi-step paths found.</p>
                   )}
-                  {result.attackSteps.map((step, i) => (
+                  {(result.attackSteps ?? []).map((step, i) => (
                     <div key={i} className={cn("rounded-xl border p-4 space-y-3", PHASE_COLORS[step.phase])}>
                       <h3 className="text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-current opacity-20 flex items-center justify-center text-xs">{i + 1}</span>
@@ -294,7 +294,7 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
                             <span className="text-muted-foreground shrink-0">{n.type}</span>
                           </div>
                         ))}
-                        {step.nodes.length > 5 && (
+                        {(step.nodes?.length ?? 0) > 5 && (
                           <p className="text-xs text-muted-foreground ml-5">+{step.nodes.length - 5} more...</p>
                         )}
                       </div>
@@ -305,10 +305,10 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
 
               {activeTab === "recs" && (
                 <div className="space-y-3">
-                  {result.recommendations.length === 0 && (
+                  {(result.recommendations?.length ?? 0) === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">No recommendations generated.</p>
                   )}
-                  {result.recommendations.map((rec, i) => (
+                  {(result.recommendations ?? []).map((rec, i) => (
                     <div key={i} className={cn("rounded-xl border p-4 space-y-2", RISK_COLORS[rec.severity])}>
                       <div className="flex items-center gap-2">
                         <Lightbulb className="w-4 h-4 shrink-0" />
