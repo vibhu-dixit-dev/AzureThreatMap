@@ -80,7 +80,7 @@ async function scanDefender(armToken: string, subscriptionId: string, nodes: Gra
     `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessments?api-version=2021-06-01`;
 
   while (nextLink) {
-    const res = await fetch(nextLink, { headers: { Authorization: `Bearer ${armToken}` } });
+    const res: Response = await fetch(nextLink, { headers: { Authorization: `Bearer ${armToken}` } });
     if (!res.ok) break;
     const data = await res.json();
 
