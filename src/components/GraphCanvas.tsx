@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import cytoscape from "cytoscape";
 import { GraphData, SimulationResult, LiveScanFinding } from "@/lib/types";
-import { Radar } from "lucide-react";
+import { Radar, Search, X } from "lucide-react";
 
 // Node colors based on type
 const typeColors: Record<string, string> = {
@@ -30,6 +30,12 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
   const cyRef = useRef<cytoscape.Core | null>(null);
   const [data, setData] = useState<GraphData | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number, y: number, finding: LiveScanFinding, nodeLabel: string } | null>(null);
+
+  // ---- Search state ----
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; label: string; type: string }>>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch('/api/environment')
@@ -135,6 +141,21 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'border-color': '#3b82f6', // primary blue
             'border-width': 4,
           }
+        },
+        {
+          selector: '.search-match',
+          style: {
+            'border-width': 4,
+            'border-color': '#a78bfa',
+            'shadow-blur': 20,
+            'shadow-color': '#a78bfa',
+            'shadow-opacity': 1.0,
+            'opacity': 1.0,
+          } as any
+        },
+        {
+          selector: '.search-dimmed',
+          style: { 'opacity': 0.12 }
         },
         {
           selector: '.scan-critical',
@@ -253,6 +274,69 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
     };
   }, [data]);
 
+  // ---- Search logic (client-side only, pure overlay) ----
+  const focusNode = useCallback((nodeId: string) => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const node = cy.getElementById(nodeId);
+    if (!node || node.length === 0) return;
+    cy.animate({
+      center: { eles: node },
+      zoom: Math.max(cy.zoom(), 1.5),
+    } as any, { duration: 400, easing: 'ease-in-out-cubic' } as any);
+  }, []);
+
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    cy.elements().removeClass('search-match search-dimmed');
+
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const q = searchTerm.toLowerCase();
+    const matches: Array<{ id: string; label: string; type: string }> = [];
+
+    cy.nodes().forEach(node => {
+      const label: string = node.data('label') || '';
+      const type: string = node.data('type') || '';
+      if (label.toLowerCase().includes(q) || type.toLowerCase().includes(q)) {
+        matches.push({ id: node.id(), label, type });
+        node.addClass('search-match');
+      } else {
+        node.addClass('search-dimmed');
+      }
+    });
+
+    setSearchResults(matches);
+    setShowDropdown(matches.length > 0);
+
+    // Auto-pan to first match
+    if (matches.length === 1) {
+      focusNode(matches[0].id);
+    }
+  }, [searchTerm, focusNode]);
+
+  const clearSearch = () => {
+    setSearchTerm('');
+    const cy = cyRef.current;
+    if (cy) cy.elements().removeClass('search-match search-dimmed');
+    setShowDropdown(false);
+    searchRef.current?.focus();
+  };
+
+  const selectResult = (nodeId: string) => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    focusNode(nodeId);
+    onNodeSelect(nodeId);
+    setShowDropdown(false);
+  };
+
   // Handle highlights
   useEffect(() => {
     if (!cyRef.current) return;
@@ -337,6 +421,58 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
 
   return (
     <div className="w-full h-full relative">
+      {/* ─── Search Bar Overlay ─── */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-md px-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <input
+            ref={searchRef}
+            type="text"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            onFocus={() => searchTerm && setShowDropdown(searchResults.length > 0)}
+            placeholder="Search resources, users, VMs, storage..."
+            className="w-full pl-9 pr-8 py-2 text-sm bg-black/60 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 shadow-lg transition-all"
+          />
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Dropdown results */}
+        {showDropdown && (
+          <div className="absolute top-full mt-1 left-4 right-4 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+            <div className="px-3 py-1.5 border-b border-white/5">
+              <span className="text-[10px] text-muted-foreground">{searchResults.length} match{searchResults.length !== 1 ? 'es' : ''}</span>
+            </div>
+            <ul className="max-h-52 overflow-y-auto">
+              {searchResults.map(r => (
+                <li key={r.id}>
+                  <button
+                    onClick={() => selectResult(r.id)}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: typeColors[r.type] || '#6b7280' }}
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-white truncate">{r.label}</div>
+                      <div className="text-[10px] text-muted-foreground">{r.type}</div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       <div
         ref={containerRef}
         className="w-full h-full"
