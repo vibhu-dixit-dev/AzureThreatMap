@@ -56,6 +56,16 @@ export interface SecurityRecommendation {
   affectedNodeId: string;
 }
 
+export interface LiveScanFinding {
+  id: string;
+  nodeId: string;
+  issue: string;
+  severity: RiskLevel;
+  source: string;
+  description: string;
+  recommendation: string;
+}
+
 export interface SimulationResult {
   compromisedNodeId: string;
   blastRadius: GraphNode[];

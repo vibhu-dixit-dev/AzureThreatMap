@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GraphData, SimulationResult, RiskLevel } from "@/lib/types";
-import { ShieldAlert, Play, RotateCcw, Activity, Shield, Key, AlertTriangle, ChevronRight, Lightbulb, FileDown } from "lucide-react";
+import { GraphData, SimulationResult, RiskLevel, LiveScanFinding } from "@/lib/types";
+import { ShieldAlert, Play, RotateCcw, Activity, Shield, Key, AlertTriangle, ChevronRight, Lightbulb, FileDown, Radar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SimulatePanelProps {
   selectedNodeId: string | null;
   onSimulationComplete: (result: SimulationResult) => void;
+  onScanComplete: (result: LiveScanFinding[]) => void;
+  scanResult: LiveScanFinding[] | null;
   onReset: () => void;
 }
 
@@ -31,11 +33,12 @@ function nodeRiskLevel(riskScore: number): RiskLevel {
   return 'Low';
 }
 
-export default function SimulatePanel({ selectedNodeId, onSimulationComplete, onReset }: SimulatePanelProps) {
+export default function SimulatePanel({ selectedNodeId, onSimulationComplete, onScanComplete, scanResult, onReset }: SimulatePanelProps) {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "steps" | "recs">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "steps" | "recs" | "findings">("overview");
 
   useEffect(() => {
     fetch('/api/environment')
@@ -70,6 +73,19 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
     onReset();
   };
 
+  const runScan = async () => {
+    setScanning(true);
+    try {
+      const res = await fetch('/api/scan', { method: 'POST' });
+      const data = await res.json();
+      onScanComplete(data.findings || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const downloadReport = () => {
     if (!result || !selectedNode) return;
     const w = window.open('', '_blank');
@@ -82,22 +98,64 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   return (
     <aside className="w-full h-full glass bg-card/80 flex flex-col shadow-2xl relative z-20">
       {/* Header */}
-      <div className="p-4 border-b border-white/10">
-        <h2 className="text-base font-heading font-semibold text-white flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-primary" />
-          Simulation Control
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">Select an identity or resource to simulate a breach.</p>
+      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-heading font-semibold text-white flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-primary" />
+            Security Center
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">Simulate attack paths or scan environment.</p>
+        </div>
+        <button
+          onClick={runScan}
+          disabled={scanning}
+          title="Run Real-time Security Scan"
+          className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-colors disabled:opacity-50 relative group"
+        >
+          {scanning ? (
+            <div className="w-5 h-5 border-2 border-indigo-400/20 border-t-indigo-400 rounded-full animate-spin" />
+          ) : (
+            <>
+              <Radar className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <div className="absolute inset-0 bg-indigo-400/20 rounded-lg rounded-full animate-ping opacity-0 group-hover:opacity-100" style={{ animationDuration: '3s' }} />
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {/* Empty state */}
-        {!selectedNode && !result && (
+        {!selectedNode && !result && !scanResult && (
           <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-8">
             <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
               <Activity className="w-8 h-8 opacity-50" />
             </div>
-            <p className="text-sm">Click on any node in the graph to begin simulation.</p>
+            <p className="text-sm">Click on any node in the graph to begin simulation, or click the radar icon to run a security scan.</p>
+          </div>
+        )}
+
+        {/* Scan Results Base View (no node selected, just scanned) */}
+        {!selectedNode && !result && scanResult && (
+          <div className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Radar className="w-4 h-4 text-indigo-400" />
+              <h3 className="text-sm font-semibold text-white">Scan Complete</h3>
+            </div>
+            <div className="text-sm text-muted-foreground mb-4">
+              {scanResult.length} issues found. Click highlighted nodes on the map to investigate.
+            </div>
+            <div className="space-y-2">
+              {['Critical', 'High', 'Medium', 'Low'].map(severity => {
+                const count = scanResult.filter(r => r.severity === severity).length;
+                if (count === 0) return null;
+                return (
+                  <div key={severity} className={cn("flex justify-between p-2 rounded-lg border", RISK_COLORS[severity as RiskLevel])}>
+                    <span className="text-xs font-semibold">{severity}</span>
+                    <span className="text-xs font-bold">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -120,13 +178,39 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
             <button
               onClick={runSimulation}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50 text-sm"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50 text-sm mb-4"
             >
               {loading
                 ? <><div className="animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full" /> Simulating...</>
                 : <><Play className="w-5 h-5" /> Run Attack Simulation</>
               }
             </button>
+
+            {/* If there are scan findings for this node */}
+            {scanResult && (() => {
+              const nodeFindings = scanResult.filter(f => f.nodeId === selectedNode.id);
+              if (nodeFindings.length === 0) return null;
+              
+              return (
+                <div className="space-y-3 mt-4 border-t border-white/10 pt-4">
+                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                    <Radar className="w-3.5 h-3.5" /> Security Findings ({nodeFindings.length})
+                  </h3>
+                  {nodeFindings.map(finding => (
+                    <div key={finding.id} className={cn("p-3 rounded-lg border space-y-2", RISK_COLORS[finding.severity])}>
+                       <div className="flex justify-between items-start">
+                         <span className="text-xs font-bold">{finding.issue}</span>
+                         <span className="text-[10px] px-1.5 rounded-sm border bg-black/20 uppercase font-mono">{finding.severity}</span>
+                       </div>
+                       <p className="text-[11px] opacity-90">{finding.description}</p>
+                       <div className="text-[10px] bg-black/10 p-1.5 rounded border border-white/5 mt-2">
+                         <strong>Fix:</strong> {finding.recommendation}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 

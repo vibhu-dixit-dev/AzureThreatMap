@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import cytoscape from "cytoscape";
-import { GraphData, SimulationResult } from "@/lib/types";
+import { GraphData, SimulationResult, LiveScanFinding } from "@/lib/types";
+import { Radar } from "lucide-react";
 
 // Node colors based on type
 const typeColors: Record<string, string> = {
@@ -21,12 +22,14 @@ interface GraphCanvasProps {
   selectedNodeId: string | null;
   onNodeSelect: (id: string) => void;
   simulationResult: SimulationResult | null;
+  scanResult?: LiveScanFinding[] | null;
 }
 
-export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationResult }: GraphCanvasProps) {
+export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationResult, scanResult }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
   const [data, setData] = useState<GraphData | null>(null);
+  const [tooltip, setTooltip] = useState<{ x: number, y: number, finding: LiveScanFinding, nodeLabel: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/environment')
@@ -132,6 +135,62 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'border-color': '#3b82f6', // primary blue
             'border-width': 4,
           }
+        },
+        {
+          selector: '.scan-critical',
+          style: {
+            'border-width': 4,
+            'border-color': '#ef4444',
+            'background-color': '#ef4444',
+            'shadow-blur': 25,
+            'shadow-color': '#ef4444',
+            'shadow-opacity': 0.9
+          } as any
+        },
+        {
+          selector: '.scan-high',
+          style: {
+            'border-width': 3,
+            'border-color': '#f97316',
+            'background-color': '#f97316',
+            'shadow-blur': 15,
+            'shadow-color': '#f97316',
+            'shadow-opacity': 0.8
+          } as any
+        },
+        {
+          selector: '.scan-medium',
+          style: {
+            'border-width': 3,
+            'border-color': '#eab308',
+            'background-color': '#eab308',
+          }
+        },
+        {
+          selector: '.scan-low',
+          style: {
+            'border-width': 2,
+            'border-color': '#3b82f6',
+            'background-color': '#3b82f6',
+          }
+        },
+        {
+          selector: '.scan-edge-critical',
+          style: {
+            'line-color': '#ef4444',
+            'target-arrow-color': '#ef4444',
+            'width': 3,
+            'zIndex': 999
+          }
+        },
+        {
+          selector: '.scan-edge-high',
+          style: {
+            'line-color': '#f97316',
+            'target-arrow-color': '#f97316',
+            'width': 2.5,
+            'zIndex': 998
+          }
         }
       ],
       userZoomingEnabled: true,
@@ -161,6 +220,28 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       }
     });
 
+    cy.on('mouseover', 'node', (evt) => {
+      const node = evt.target;
+      // Only show tooltip if there's a scan result and we aren't currently dragging the background
+      const finding = node.data('scanFinding');
+      if (finding) {
+        setTooltip({
+          x: evt.renderedPosition.x,
+          y: evt.renderedPosition.y,
+          finding,
+          nodeLabel: node.data('label')
+        });
+      }
+    });
+
+    cy.on('mouseout', 'node', () => {
+      setTooltip(null);
+    });
+
+    cy.on('pan zoom', () => {
+      setTooltip(null);
+    });
+
     cyRef.current = cy;
 
     return () => {
@@ -178,7 +259,11 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
     const cy = cyRef.current;
 
     // Reset styles
-    cy.elements().removeClass('highlighted-node highlighted-edge dimmed selected-node');
+    cy.elements().removeClass('highlighted-node highlighted-edge dimmed selected-node scan-critical scan-high scan-medium scan-low scan-edge-critical scan-edge-high');
+    
+    // Reset data
+    // Reset data — set to null instead of removeData to avoid CollectionReturnValue lint error
+    cy.nodes().forEach(n => { n.data('scanFinding', null); });
 
     if (simulationResult) {
       // Highlight Blast Radius
@@ -200,11 +285,55 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
           edge.addClass('dimmed');
         }
       });
+    } else if (scanResult && scanResult.length > 0) {
+      // Highlight Live Scan Results
+      
+      const scanMap = new Map<string, LiveScanFinding>();
+      scanResult.forEach(res => {
+        // If a node has multiple issues, keep the highest severity for visual representation
+        const existing = scanMap.get(res.nodeId);
+        if (!existing || 
+           (res.severity === 'Critical') || 
+           (res.severity === 'High' && existing.severity !== 'Critical') ||
+           (res.severity === 'Medium' && existing.severity === 'Low')) {
+           scanMap.set(res.nodeId, res);
+        }
+      });
+
+      cy.nodes().forEach(node => {
+        const finding = scanMap.get(node.id());
+        if (finding) {
+          node.data('scanFinding', finding);
+          node.addClass(`scan-${finding.severity.toLowerCase()}`);
+        } else {
+          node.addClass('dimmed'); // dim safe nodes to highlight risks
+        }
+      });
+
+      cy.edges().forEach(edge => {
+        // Find if source or target has a critical/high finding
+        const sFinding = scanMap.get(edge.source().id());
+        const tFinding = scanMap.get(edge.target().id());
+        
+        const isCritical = sFinding?.severity === 'Critical' || tFinding?.severity === 'Critical';
+        const isHigh = sFinding?.severity === 'High' || tFinding?.severity === 'High';
+
+        if (isCritical) {
+          edge.addClass('scan-edge-critical');
+        } else if (isHigh) {
+           edge.addClass('scan-edge-high');
+        } else {
+           edge.addClass('dimmed');
+        }
+      });
+
+      if (selectedNodeId) cy.getElementById(selectedNodeId).addClass('selected-node');
+
     } else if (selectedNodeId) {
       // Just highlight selected node
       cy.getElementById(selectedNodeId).addClass('selected-node');
     }
-  }, [simulationResult, selectedNodeId]);
+  }, [simulationResult, scanResult, selectedNodeId]);
 
   return (
     <div className="w-full h-full relative">
@@ -220,7 +349,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       )}
 
       {/* Legend overlay */}
-      <div className="absolute bottom-3 left-3 glass-card p-2 rounded-md flex flex-col gap-1.5 pointer-events-none">
+      <div className="absolute bottom-3 left-3 glass-card p-2 rounded-md flex flex-col gap-1.5 pointer-events-none z-10">
         <h4 className="text-[10px] font-semibold text-white mb-0.5 uppercase tracking-wider">Legend</h4>
         <div className="flex flex-wrap gap-x-3 gap-y-1.5 max-w-[320px]">
           {Object.entries(typeColors).map(([type, color]) => (
@@ -231,6 +360,40 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
           ))}
         </div>
       </div>
+
+      {/* Hover Tooltip for Scans */}
+      {tooltip && (
+        <div 
+          className="absolute z-50 pointer-events-none glass-card p-3 rounded-xl border border-white/20 shadow-2xl bg-black/80 backdrop-blur-md min-w-[200px] max-w-[250px]"
+          style={{ 
+            left: tooltip.x + 15, 
+            top: tooltip.y + 15, 
+            transform: 'translate(0, 0)'
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+            <Radar className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="text-xs font-semibold text-white truncate">{tooltip.nodeLabel}</span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-start gap-2">
+              <span className="text-[11px] text-muted-foreground">Issue:</span>
+              <span className="text-[11px] text-white font-medium text-right leading-tight">{tooltip.finding.issue}</span>
+            </div>
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">Severity:</span>
+              {/* @ts-ignore - Tailwind class gen */}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-sm border font-semibold ${tooltip.finding.severity === 'Critical' ? 'bg-red-500/20 text-red-400 border-red-500/30' : tooltip.finding.severity === 'High' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : tooltip.finding.severity === 'Medium' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-blue-500/20 text-blue-400 border-blue-500/30'}`}>
+                {tooltip.finding.severity}
+              </span>
+            </div>
+            <div className="flex justify-between items-start gap-2 pt-1 border-t border-white/5">
+              <span className="text-[9px] text-muted-foreground mt-0.5">Source:</span>
+              <span className="text-[10px] text-slate-300 text-right">{tooltip.finding.source}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,11 +4,13 @@ import { useState } from "react";
 import GraphCanvas from "@/components/GraphCanvas";
 import SimulatePanel from "@/components/SimulatePanel";
 import { useUI } from "@/context/UIContext";
+import { LiveScanFinding } from "@/lib/types";
 
 export default function Dashboard() {
   const { devToolsPosition } = useUI();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<LiveScanFinding[] | null>(null);
 
   return (
     <div className={`flex-1 flex w-full relative min-h-0 ${devToolsPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
@@ -18,6 +20,7 @@ export default function Dashboard() {
           selectedNodeId={selectedNodeId} 
           onNodeSelect={setSelectedNodeId}
           simulationResult={simulationResult}
+          scanResult={scanResult}
         />
       </div>
 
@@ -29,10 +32,19 @@ export default function Dashboard() {
         `}>
           <SimulatePanel 
             selectedNodeId={selectedNodeId} 
-            onSimulationComplete={setSimulationResult}
+            onSimulationComplete={(res) => {
+              setSimulationResult(res);
+              setScanResult(null); // Clear scan when simulating
+            }}
+            onScanComplete={(res) => {
+              setScanResult(res);
+              setSimulationResult(null); // Clear simulation when scanning
+            }}
+            scanResult={scanResult}
             onReset={() => {
               setSelectedNodeId(null);
               setSimulationResult(null);
+              setScanResult(null);
             }}
           />
         </div>
