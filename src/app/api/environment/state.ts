@@ -4,6 +4,12 @@ import { mockAzureEnvironment } from "@/lib/mockData";
 interface UserState {
   graph: GraphData;
   identity?: UserIdentity;
+  azureCredentials?: {
+    tenantId: string;
+    clientId: string;
+    clientSecret: string;
+    subscriptions: string[];
+  };
 }
 
 // Scoped in-memory store for demo purposes. 
@@ -18,11 +24,21 @@ export function getUserIdentity(sessionId: string): UserIdentity {
   return userStates.get(sessionId)?.identity || { name: "Security Admin", tenant: "Demo Tenant" };
 }
 
-export function setCurrentEnvironment(sessionId: string, data: GraphData, identity?: UserIdentity) {
+export function getAzureCredentials(sessionId: string) {
+  return userStates.get(sessionId)?.azureCredentials;
+}
+
+export function setCurrentEnvironment(
+  sessionId: string, 
+  data: GraphData, 
+  identity?: UserIdentity,
+  azureCredentials?: { tenantId: string; clientId: string; clientSecret: string; subscriptions: string[] }
+) {
   const existing = userStates.get(sessionId);
   userStates.set(sessionId, { 
     graph: data, 
-    identity: identity || existing?.identity 
+    identity: identity || existing?.identity,
+    azureCredentials: azureCredentials || existing?.azureCredentials
   });
 }
 

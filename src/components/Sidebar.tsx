@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
   ShieldAlert, 
@@ -24,6 +26,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ onImportClick, identity }: SidebarProps) {
+  const pathname = usePathname();
   const { toggleTheme, setUISize, setDevToolsPosition, uiSize, devToolsPosition } = useUI();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPrefsOpen, setIsPrefsOpen] = useState(false);
@@ -67,19 +70,19 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
       <PreferencesModal isOpen={isPrefsOpen} onClose={() => setIsPrefsOpen(false)} />
       
       <aside className="fixed inset-y-0 left-0 w-16 md:w-56 bg-card/60 backdrop-blur-2xl border-r border-white/5 flex flex-col z-20 transition-all duration-300">
-        <div className="h-14 md:h-16 flex items-center justify-center md:justify-start md:px-5 border-b border-white/5">
+        <Link href="/" className="h-14 md:h-16 flex items-center justify-center md:justify-start md:px-5 border-b border-white/5 hover:bg-white/5 transition-colors">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-primary/20">
             <ShieldAlert className="w-5 h-5 text-white" />
           </div>
           <span className="hidden md:block ml-3 font-heading font-bold text-lg text-white tracking-wide">
             AzureThreatMap
           </span>
-        </div>
+        </Link>
 
         <nav className="flex-1 py-4 flex flex-col gap-1 px-3">
-          <NavItem icon={LayoutDashboard} label="Dashboard" active />
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" active={pathname === "/dashboard"} />
           <NavItem icon={CloudUpload} label="Import Azure" onClick={onImportClick} />
-          <NavItem icon={ShieldAlert} label="Simulations" />
+          <NavItem href="/dashboard/recommendations" icon={ShieldAlert} label="Recommendations" active={pathname?.includes("/recommendations")} />
         </nav>
 
         <div className="p-4 border-t border-white/5 mt-auto hidden md:block relative">
@@ -131,11 +134,11 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
   );
 }
 
-function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, label: string, active?: boolean, onClick?: () => void }) {
-  return (
+function NavItem({ href, icon: Icon, label, active = false, onClick }: { href?: string, icon: any, label: string, active?: boolean, onClick?: () => void }) {
+  const inner = (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative w-full text-left
         ${active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-white'}
       `}
     >
@@ -147,6 +150,8 @@ function NavItem({ icon: Icon, label, active = false, onClick }: { icon: any, la
       )}
     </button>
   );
+
+  return href ? <Link href={href} className="w-full">{inner}</Link> : inner;
 }
 
 function MenuButton({ icon: Icon, label, onClick, className }: { icon: any, label: string, onClick?: () => void, className?: string }) {

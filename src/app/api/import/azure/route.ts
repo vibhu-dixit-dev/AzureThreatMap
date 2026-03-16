@@ -15,8 +15,13 @@ export async function POST(req: Request) {
     // Attempt to authenticate and fetch the live Azure environment
     const { graph, identity } = await importAzureEnvironment(tenantId, clientId, clientSecret);
     
+    // Extract imported subscriptions from the graph nodes to query for recommendations later
+    const subscriptions = graph.nodes
+      .filter((n: any) => n.type === "Subscription")
+      .map((n: any) => n.id);
+
     // Update the live graph for this session only
-    setCurrentEnvironment(sessionId, graph, identity);
+    setCurrentEnvironment(sessionId, graph, identity, { tenantId, clientId, clientSecret, subscriptions });
 
     return NextResponse.json({ success: true, nodeCount: graph.nodes.length, identity });
   } catch (error: any) {
