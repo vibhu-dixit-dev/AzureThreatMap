@@ -6,11 +6,28 @@ import SimulatePanel from "@/components/SimulatePanel";
 import { useUI } from "@/context/UIContext";
 import { LiveScanFinding } from "@/lib/types";
 
+import { useAuth } from "@/context/AuthContext";
+import { Loader2 } from "lucide-react";
+
 export default function Dashboard() {
+  const { user, loading } = useAuth();
   const { devToolsPosition } = useUI();
+
+  // ALL hooks must be declared before any early returns (React Rules of Hooks)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [scanResult, setScanResult] = useState<LiveScanFinding[] | null>(null);
+
+  // Protection layer — conditional returns AFTER all hooks
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-[#020617] flex items-center justify-center">
+        <Loader2 className="animate-spin text-blue-500" size={48} />
+      </div>
+    );
+  }
+
+  if (!user) return null; // Redirect handled by AuthContext
 
   return (
     <div className={`flex-1 flex w-full relative min-h-0 ${devToolsPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>

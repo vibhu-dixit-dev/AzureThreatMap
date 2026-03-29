@@ -18,6 +18,7 @@ import {
 import { UserIdentity } from "@/lib/types";
 import { useUI } from "@/context/UIContext";
 import PreferencesModal from "./PreferencesModal";
+import ProfileSidebar from "./ProfileSidebar";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPrefsOpen, setIsPrefsOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const userDisplayName = identity?.name || "Security Admin";
   const userTenant = identity?.tenant || "Demo Tenant";
@@ -40,7 +42,19 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
     
     setIsResetting(true);
     try {
+      // 1. Clear Next.js environment state
       const res = await fetch('/api/environment/reset', { method: 'POST' });
+      
+      // 2. Clear Active SPs in MongoDB
+      const token = localStorage.getItem("token");
+      if (token) {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        await fetch(`${API_BASE}/api/service-principal/reset-active`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(err => console.error("Failed to reset SPs:", err));
+      }
+
       if (res.ok) {
         window.location.reload();
       }
@@ -68,6 +82,7 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
   return (
     <>
       <PreferencesModal isOpen={isPrefsOpen} onClose={() => setIsPrefsOpen(false)} />
+      <ProfileSidebar isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
       
       <aside className="fixed inset-y-0 left-0 w-16 md:w-56 bg-card/60 backdrop-blur-2xl border-r border-white/5 flex flex-col z-20 transition-all duration-300">
         <Link href="/" className="h-14 md:h-16 flex items-center justify-center md:justify-start md:px-5 border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -116,7 +131,10 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className={`flex items-center gap-3 p-2 rounded-lg transition-all cursor-pointer ${isMenuOpen ? 'bg-white/10' : 'bg-white/5 hover:bg-white/10'}`}
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-primary flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-xl shadow-primary/20">
+            <div 
+              onClick={(e) => { e.stopPropagation(); setIsProfileOpen(true); }}
+              className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-primary flex items-center justify-center shrink-0 text-white font-bold text-sm shadow-xl shadow-primary/20 hover:ring-2 hover:ring-blue-400 transition-all cursor-pointer"
+            >
               {userDisplayName.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col min-w-0">

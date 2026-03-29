@@ -3,18 +3,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ThreeDLandingScene from "@/components/ThreeDLandingScene";
+import AuthModal from "@/components/AuthModal";
 import { motion } from "framer-motion";
 
 export default function LandingPage() {
   const router = useRouter();
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
-  const handleEnter = () => {
+  const handleAuthSuccess = (token: string) => {
+    setShowAuth(false);
     setIsTransitioning(true);
     // Wait for the camera zoom transition to mostly finish before routing
     setTimeout(() => {
       router.push("/dashboard");
     }, 1500); 
+  };
+
+  const handleEnter = () => {
+    // If we have a token, skip auth
+    const token = localStorage.getItem("token");
+    if (token) {
+      handleAuthSuccess(token);
+    } else {
+      setShowAuth(true);
+    }
   };
 
   return (
@@ -73,6 +86,13 @@ export default function LandingPage() {
       <div className="absolute top-8 right-8 w-16 h-16 border-t border-r border-white/10 rounded-tr-xl pointer-events-none opacity-50" />
       <div className="absolute bottom-8 left-8 w-16 h-16 border-b border-l border-white/10 rounded-bl-xl pointer-events-none opacity-50" />
       <div className="absolute bottom-8 right-8 w-16 h-16 border-b border-r border-white/10 rounded-br-xl pointer-events-none opacity-50" />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuth} 
+        onClose={() => setShowAuth(false)} 
+        onSuccess={handleAuthSuccess} 
+      />
     </main>
   );
 }

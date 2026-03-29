@@ -55,6 +55,17 @@ export default function ImportModal({ isOpen, onClose, onImportSuccess }: Import
 
       setIsSuccess(true);
 
+      // Save SP with encrypted secret to new endpoint
+      const token = localStorage.getItem("token");
+      if (token && clientId && tenantId && clientSecret) {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        fetch(`${API_BASE}/api/service-principal/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ clientId, tenantId, clientSecret }),
+        }).catch(() => {}); // Non-blocking, best-effort
+      }
+
       // Pass the new identity back to the parent
       if (onImportSuccess && data.identity) {
         onImportSuccess(data.identity);
@@ -64,8 +75,6 @@ export default function ImportModal({ isOpen, onClose, onImportSuccess }: Import
       setTimeout(() => {
         setIsSuccess(false);
         onClose();
-        // Skip reload if we are updating state dynamically, or keep it if graph needs full reset
-        // window.location.reload(); 
       }, 1500);
 
     } catch (err: any) {

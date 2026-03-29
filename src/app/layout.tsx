@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import { ensureSession } from "@/lib/auth";
+import { AuthProvider } from "@/context/AuthContext";
+import { UIProvider } from "@/context/UIContext";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,22 +25,21 @@ export const viewport = {
   maximumScale: 1,
 };
 
-import { UIProvider } from "@/context/UIContext";
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  ensureSession();
+  // Note: ensureSession removed — cookies.set() is not allowed in Server Components in Next.js 16.
+  // Session cookies are now managed entirely by the Express backend JWT system.
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} ${outfit.variable} antialiased`}
-      >
-        <UIProvider>
-          {children}
-        </UIProvider>
+      <body className={`${inter.variable} ${outfit.variable} antialiased`}>
+        <AuthProvider>
+          <UIProvider>
+            {children}
+          </UIProvider>
+        </AuthProvider>
       </body>
     </html>
   );
