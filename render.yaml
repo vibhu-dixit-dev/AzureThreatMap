@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: azure-threat-map-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server/index.js
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      # The following must be securely set in the Render Dashboard after deployment:
+      # - MONGODB_URI
+      # - JWT_SECRET
+      # - ENCRYPTION_KEY
+      # - FRONTEND_URL
+      # - GMAIL_USER
+      # - GMAIL_PASS
