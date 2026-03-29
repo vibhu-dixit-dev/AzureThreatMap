@@ -24,7 +24,7 @@ export default function ImportModal({ isOpen, onClose, onImportSuccess }: Import
   const [showHelper, setShowHelper] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const helperCommand = "irm https://raw.githubusercontent.com/vibhu-dixit-dev/azure-threatmap-tools/create-sp.ps1 | iex";
+  const helperCommand = "irm https://raw.githubusercontent.com/vibhu-dixit-dev/AzureThreatMap/main/create-sp.ps1 | iex";
 
   const copyCommand = () => {
     navigator.clipboard.writeText(helperCommand);

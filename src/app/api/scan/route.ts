@@ -3,6 +3,11 @@ import { getSessionId } from "@/lib/auth";
 import { getAzureCredentials, getCurrentEnvironment } from "@/app/api/environment/state";
 import { LiveScanFinding, GraphData, GraphNode } from "@/lib/types";
 
+const SCAN_API_VERSIONS = {
+  SECURITY_ASSESSMENTS: "2021-06-01",
+  ACTIVITY_LOGS: "2015-04-01",
+};
+
 // ---------------------------------------------------------------------------
 // TOKEN HELPERS
 // ---------------------------------------------------------------------------
@@ -77,7 +82,7 @@ function matchNodeId(resourceId: string, nodes: GraphNode[]): string {
 async function scanDefender(armToken: string, subscriptionId: string, nodes: GraphNode[]): Promise<LiveScanFinding[]> {
   const findings: LiveScanFinding[] = [];
   let nextLink: string | null =
-    `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessments?api-version=2021-06-01`;
+    `https://management.azure.com/subscriptions/${subscriptionId}/providers/Microsoft.Security/assessments?api-version=${SCAN_API_VERSIONS.SECURITY_ASSESSMENTS}`;
 
   while (nextLink) {
     const res: Response = await fetch(nextLink, { headers: { Authorization: `Bearer ${armToken}` } });
@@ -108,40 +113,44 @@ async function scanActivityLogs(armToken: string, subscriptionId: string, nodes:
   const findings: LiveScanFinding[] = [];
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const filter = encodeURIComponent(`eventTimestamp ge '${since}' and status/value eq 'Succeeded'`);
-  const url = `https://management.azure.com/subscriptions/${subscriptionId}/providers/microsoft.insights/eventtypes/management/values?api-version=2015-04-01&$filter=${filter}&$select=operationName,resourceId,caller,eventTimestamp,status`;
+  let nextUrl: string | null = `https://management.azure.com/subscriptions/${subscriptionId}/providers/microsoft.insights/eventtypes/management/values?api-version=${SCAN_API_VERSIONS.ACTIVITY_LOGS}&$filter=${filter}&$select=operationName,resourceId,caller,eventTimestamp,status`;
 
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${armToken}` } });
-  if (!res.ok) return findings;
-
-  const data = await res.json();
   const seen = new Set<string>();
 
-  for (const event of data.value || []) {
-    const opName: string = (event.operationName?.value || "").toLowerCase();
-    const resourceId: string = event.resourceId || "";
-    const caller: string = event.caller || "Unknown";
+  while (nextUrl) {
+    const res: Response = await fetch(nextUrl, { headers: { Authorization: `Bearer ${armToken}` } });
+    if (!res.ok) break;
 
-    let issue = "";
-    let severity: LiveScanFinding["severity"] = "Medium";
+    const data: any = await res.json();
 
-    if (opName.includes("roleassignments/write")) { issue = `Privileged role assigned by ${caller}`; severity = "High"; }
-    else if (opName.includes("microsoft.authorization/elevateaccess")) { issue = `Tenant-level access elevation by ${caller}`; severity = "Critical"; }
-    else if (opName.includes("delete") && (opName.includes("keyvaults") || opName.includes("virtualmachines"))) { issue = `Critical resource deletion by ${caller}`; severity = "High"; }
-    else continue;
+    for (const event of data.value || []) {
+      const opName: string = (event.operationName?.value || "").toLowerCase();
+      const resourceId: string = event.resourceId || "";
+      const caller: string = event.caller || "Unknown";
 
-    const dedupe = `${issue}|${resourceId}`;
-    if (seen.has(dedupe)) continue;
-    seen.add(dedupe);
+      let issue = "";
+      let severity: LiveScanFinding["severity"] = "Medium";
 
-    findings.push({
-      id: `activity-${Buffer.from(dedupe).toString("base64").slice(0, 12)}`,
-      nodeId: matchNodeId(resourceId, nodes),
-      issue,
-      severity,
-      source: "Azure Activity Logs",
-      description: `Detected at ${event.eventTimestamp || "unknown time"}. Caller: ${caller}.`,
-      recommendation: "Review the activity log in the Azure portal and verify the action was authorized.",
-    });
+      if (opName.includes("roleassignments/write")) { issue = `Privileged role assigned by ${caller}`; severity = "High"; }
+      else if (opName.includes("microsoft.authorization/elevateaccess")) { issue = `Tenant-level access elevation by ${caller}`; severity = "Critical"; }
+      else if (opName.includes("delete") && (opName.includes("keyvaults") || opName.includes("virtualmachines"))) { issue = `Critical resource deletion by ${caller}`; severity = "High"; }
+      else continue;
+
+      const dedupe = `${issue}|${resourceId}`;
+      if (seen.has(dedupe)) continue;
+      seen.add(dedupe);
+
+      findings.push({
+        id: `activity-${Buffer.from(dedupe).toString("base64").slice(0, 12)}`,
+        nodeId: matchNodeId(resourceId, nodes),
+        issue,
+        severity,
+        source: "Azure Activity Logs",
+        description: `Detected at ${event.eventTimestamp || "unknown time"}. Caller: ${caller}.`,
+        recommendation: "Review the activity log in the Azure portal and verify the action was authorized.",
+      });
+    }
+    nextUrl = data.nextLink || null;
   }
   return findings;
 }

@@ -2,6 +2,15 @@ import { GraphData, GraphNode, GraphEdge, NodeType, UserIdentity } from "./types
 
 // ─── Token Helpers ────────────────────────────────────────────────
 
+const API_VERSIONS = {
+  TENANTS: "2020-01-01",
+  SUBSCRIPTIONS: "2020-01-01",
+  RESOURCE_GROUPS: "2021-04-01",
+  RESOURCES: "2021-04-01",
+  ROLE_ASSIGNMENTS: "2022-04-01",
+  ROLE_DEFINITIONS: "2022-04-01",
+};
+
 async function getToken(tenantId: string, clientId: string, clientSecret: string, scope: string) {
   const url = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`;
   const params = new URLSearchParams({
@@ -22,10 +31,22 @@ async function getToken(tenantId: string, clientId: string, clientSecret: string
   return (await res.json()).access_token as string;
 }
 
-async function armGet(url: string, token: string) {
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) return null;
-  return res.json();
+/**
+ * Robust paginated GET for Azure Resource Manager
+ */
+async function paginatedArmGet(url: string, token: string) {
+  let allResults: any[] = [];
+  let nextUrl: string | null = url;
+
+  while (nextUrl) {
+    const res: Response = await fetch(nextUrl, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) break;
+    const data: any = await res.json();
+    allResults = [...allResults, ...(data.value || [])];
+    // Azure ARM typically uses nextLink
+    nextUrl = data.nextLink || null;
+  }
+  return { value: allResults };
 }
 
 async function graphGet(path: string, token: string) {
@@ -60,13 +81,13 @@ export async function importAzureEnvironment(
 
   // Fetch Identity Details
   const [tenantInfo, spInfo] = await Promise.all([
-    armGet(`https://management.azure.com/tenants?api-version=2020-01-01`, armToken),
+    paginatedArmGet(`https://management.azure.com/tenants?api-version=${API_VERSIONS.TENANTS}`, armToken),
     graphToken ? graphGet(`/servicePrincipals(appId='${clientId}')`, graphToken) : null
   ]);
 
   const identity: UserIdentity = {
     name: spInfo?.displayName || "Service Principal",
-    tenant: tenantInfo?.value?.find((t: any) => t.tenantId === tenantId)?.displayName || tenantId
+    tenant: (tenantInfo?.value as any[])?.find((t: any) => t.tenantId === tenantId)?.displayName || tenantId
   };
 
   function addNode(node: GraphNode) {
@@ -81,7 +102,7 @@ export async function importAzureEnvironment(
   }
 
   // ── 1. Subscriptions ──────────────────────────────────────────
-  const subData = await armGet("https://management.azure.com/subscriptions?api-version=2020-01-01", armToken);
+  const subData = await paginatedArmGet(`https://management.azure.com/subscriptions?api-version=${API_VERSIONS.SUBSCRIPTIONS}`, armToken);
   const subscriptions: any[] = subData?.value ?? [];
 
   for (const sub of subscriptions) {
@@ -89,8 +110,8 @@ export async function importAzureEnvironment(
     addNode({ id: subId, label: sub.displayName || subId, type: "Subscription", riskScore: 5 });
 
     // ── 2. Resource Groups ─────────────────────────────────────
-    const rgData = await armGet(
-      `https://management.azure.com/subscriptions/${subId}/resourcegroups?api-version=2021-04-01`,
+    const rgData = await paginatedArmGet(
+      `https://management.azure.com/subscriptions/${subId}/resourcegroups?api-version=${API_VERSIONS.RESOURCE_GROUPS}`,
       armToken
     );
     for (const rg of rgData?.value ?? []) {
@@ -99,8 +120,8 @@ export async function importAzureEnvironment(
       addEdge({ id: `edge-sub-rg-${rgId}`, source: subId, target: rgId, type: "CONTAINS" });
 
       // ── 3. Resources inside RG ─────────────────────────────
-      const resData = await armGet(
-        `https://management.azure.com/subscriptions/${subId}/resourceGroups/${rg.name}/resources?api-version=2021-04-01`,
+      const resData = await paginatedArmGet(
+        `https://management.azure.com/subscriptions/${subId}/resourceGroups/${rg.name}/resources?api-version=${API_VERSIONS.RESOURCES}`,
         armToken
       );
       for (const resource of resData?.value ?? []) {
@@ -139,14 +160,14 @@ export async function importAzureEnvironment(
     }
 
     // ── 5. Role Assignments (RBAC) ─────────────────────────────
-    const raData = await armGet(
-      `https://management.azure.com/subscriptions/${subId}/providers/Microsoft.Authorization/roleAssignments?api-version=2022-04-01`,
+    const raData = await paginatedArmGet(
+      `https://management.azure.com/subscriptions/${subId}/providers/Microsoft.Authorization/roleAssignments?api-version=${API_VERSIONS.ROLE_ASSIGNMENTS}`,
       armToken
     );
 
     // Also fetch role definitions to get friendly names
-    const rdData = await armGet(
-      `https://management.azure.com/subscriptions/${subId}/providers/Microsoft.Authorization/roleDefinitions?api-version=2022-04-01`,
+    const rdData = await paginatedArmGet(
+      `https://management.azure.com/subscriptions/${subId}/providers/Microsoft.Authorization/roleDefinitions?api-version=${API_VERSIONS.ROLE_DEFINITIONS}`,
       armToken
     );
     const roleDefMap: Record<string, string> = {};
