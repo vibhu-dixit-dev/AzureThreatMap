@@ -91,4 +91,32 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// @route   PUT /api/user/update-username
+// @desc    Update user's display name/username
+router.put('/update-username', async (req, res) => {
+  const { name } = req.body;
+  
+  if (!name || name.trim().length < 3 || name.trim().length > 30) {
+    return res.status(400).json({ error: 'Username must be between 3 and 30 characters' });
+  }
+
+  try {
+    const trimmedName = name.trim();
+    
+    // Enforce uniqueness
+    const existingUser = await User.findOne({ name: trimmedName, _id: { $ne: req.user._id } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username is already taken' });
+    }
+
+    const user = await User.findById(req.user._id);
+    user.name = trimmedName;
+    await user.save();
+
+    res.json({ message: 'Username updated successfully', name: user.name });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update username' });
+  }
+});
+
 module.exports = router;

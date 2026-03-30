@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, User, Mail, Calendar, Clock, Key, Lock, ShieldCheck,
   ChevronRight, Loader2, Eye, EyeOff, CheckCircle2, Zap,
-  Trash2, AlertTriangle,
+  Trash2, AlertTriangle, Edit2, Save
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 interface Profile {
   name: string;
@@ -41,6 +42,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [sps, setSps] = useState<ServicePrincipal[]>([]);
   const [loading, setLoading] = useState(false);
   const [spLoading, setSpLoading] = useState<string | null>(null);
+  const { refreshUser } = useAuth();
 
   // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<ServicePrincipal | null>(null);
@@ -54,6 +56,12 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [showNew, setShowNew] = useState(false);
   const [resetMsg, setResetMsg] = useState({ type: "", text: "" });
   const [resetting, setResetting] = useState(false);
+
+  // Username editing
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editNameMsg, setEditNameMsg] = useState({ type: "", text: "" });
+  const [savingName, setSavingName] = useState(false);
 
   const authHeader = () => ({
     "Content-Type": "application/json",
@@ -144,6 +152,36 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
       setResetMsg({ type: "error", text: err.message });
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!editName.trim() || editName.trim().length < 3) {
+      setEditNameMsg({ type: "error", text: "Name must be at least 3 characters" });
+      return;
+    }
+    setSavingName(true);
+    setEditNameMsg({ type: "", text: "" });
+    try {
+      const res = await fetch(`${BACKEND_USER}/update-username`, {
+        method: "PUT",
+        headers: authHeader(),
+        body: JSON.stringify({ name: editName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setProfile(prev => prev ? { ...prev, name: data.name } : null);
+      setIsEditingName(false);
+      setEditNameMsg({ type: "success", text: "Username updated successfully!" });
+      setTimeout(() => setEditNameMsg({ type: "", text: "" }), 3000);
+      
+      // Refresh AuthContext globally so Navbars update seamlessly
+      await refreshUser();
+    } catch (err: any) {
+      setEditNameMsg({ type: "error", text: err.message });
+    } finally {
+      setSavingName(false);
     }
   };
 
@@ -245,9 +283,58 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
                     {/* PROFILE TAB */}
                     {activeTab === "profile" && profile && (
                       <div className="space-y-4">
-                        <InfoCard icon={User} label="Name" value={profile.name} />
+                        <AnimatePresence>
+                          {editNameMsg.text && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                              className={`p-3 rounded-lg text-sm border overflow-hidden ${editNameMsg.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+                              {editNameMsg.text}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        
+                        <div className="flex flex-col gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                                <User size={18} className="text-blue-400" />
+                              </div>
+                              <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-xs text-slate-500 mb-0.5">Name</p>
+                                {isEditingName ? (
+                                  <input 
+                                    type="text" 
+                                    value={editName} 
+                                    onChange={e => setEditName(e.target.value)}
+                                    className="bg-slate-900 border border-blue-500/50 rounded-md px-2 py-1 text-sm text-white focus:outline-none w-full"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <p className="text-sm font-medium text-white truncate">{profile.name}</p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="shrink-0">
+                              {isEditingName ? (
+                                <div className="flex gap-2">
+                                  <button onClick={() => { setIsEditingName(false); setEditNameMsg({type:"", text:""}); }} className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 transition-colors">
+                                    <X size={16} />
+                                  </button>
+                                  <button onClick={handleSaveName} disabled={savingName} className="p-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white transition-colors">
+                                    {savingName ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                  </button>
+                                </div>
+                              ) : (
+                                <button onClick={() => { setEditName(profile.name); setIsEditingName(true); }} className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                                  <Edit2 size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
                         <InfoCard icon={Mail} label="Email" value={profile.email} />
-                        <InfoCard icon={Clock} label="Trial Days Left" value={`${profile.subscriptionDays} days`} highlight={profile.subscriptionDays <= 3} />
+                        <InfoCard icon={Clock} label="Trial Days" value={`${profile.subscriptionDays} days left`} highlight={profile.subscriptionDays <= 3} />
                         <InfoCard icon={Calendar} label="Member Since"
                           value={new Date(profile.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} />
                       </div>

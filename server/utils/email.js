@@ -10,18 +10,74 @@ const transporter = nodemailer.createTransport({
 
 const sendOTP = async (email, otp) => {
   const mailOptions = {
-    from: process.env.GMAIL_USER,
+    from: `"AzureThreatMap" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: 'AzureThreatMap - Verify Your Email',
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-        <h2 style="color: #3b82f6;">Verify Your Email</h2>
-        <p>Your OTP for AzureThreatMap signup is:</p>
-        <div style="font-size: 24px; font-weight: bold; background: #f3f4f6; padding: 10px; display: inline-block; border-radius: 5px;">
-          ${otp}
-        </div>
-        <p>This OTP will expire in 10 minutes.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Your Email</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-w-width: 600px; width: 100%; max-width: 600px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+                
+                <!-- Header Component -->
+                <tr>
+                  <td style="text-align: center; background-color: #0d1117;">
+                    <img src="${process.env.FRONTEND_URL}/email-banner.jpg" alt="AzureThreatMap" width="600" style="max-width: 100%; height: auto; display: block;" />
+                  </td>
+                </tr>
+
+                <!-- Body Component -->
+                <tr>
+                  <td style="padding: 40px;">
+                    <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 22px; font-weight: 600;">Verify Your Email Address</h2>
+                    <p style="margin: 0 0 8px 0; color: #475569; font-size: 16px; line-height: 24px;">
+                      Welcome to AzureThreatMap! Use the One-Time Password (OTP) below to securely verify your email address and activate your account.
+                    </p>
+                    <p style="margin: 0 0 32px 0; color: #ef4444; font-size: 14px; font-weight: 500;">
+                      Do not share this code with anyone.
+                    </p>
+
+                    <!-- OTP Box -->
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td align="center" style="padding: 32px; background-color: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0;">
+                          <div style="font-size: 36px; font-weight: 700; color: #0f172a; letter-spacing: 8px;">${otp}</div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin: 32px 0 0 0; color: #64748b; font-size: 14px; text-align: center;">
+                      This verification code will expire in <strong>10 minutes</strong>.
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Footer Component -->
+                <tr>
+                  <td style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
+                    <h3 style="margin: 0 0 8px 0; color: #0f172a; font-size: 16px; font-weight: 600;">AzureThreatMap</h3>
+                    <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">Securing Your Cloud Intelligence</p>
+                    <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+                      If you didn't request this email, you can safely ignore it.<br>
+                      Need help? Contact our support team.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `,
   };
 
