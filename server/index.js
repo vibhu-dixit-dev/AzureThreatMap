@@ -39,7 +39,8 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -52,6 +53,7 @@ mongoose.connect(MONGODB_URI)
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/service-principal', require('./routes/spRoutes'));
+app.use('/api/report', require('./routes/reportRoutes'));
 
 // Basic Route
 app.get('/', (req, res) => {

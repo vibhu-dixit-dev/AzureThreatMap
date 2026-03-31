@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { GraphData, SimulationResult, RiskLevel, LiveScanFinding } from "@/lib/types";
-import { ShieldAlert, Play, RotateCcw, Activity, Shield, Key, AlertTriangle, ChevronRight, Lightbulb, FileDown, Radar } from "lucide-react";
+import { ShieldAlert, Play, RotateCcw, Activity, Shield, Key, AlertTriangle, ChevronRight, Lightbulb, FileDown, Radar, Mail, CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SimulatePanelProps {
@@ -39,6 +39,8 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "steps" | "recs" | "findings">("overview");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   useEffect(() => {
     fetch('/api/environment')
@@ -95,8 +97,70 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
     w.document.close();
   };
 
+  const emailReport = async () => {
+    if (!result || !selectedNode) return;
+    setSendingEmail(true);
+    setToast(null);
+    try {
+      const html = generateReport(result, selectedNode);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Brief delay to ensure styles run
+      await new Promise(r => setTimeout(r, 100));
+      
+      const html2pdfModule = await import('html2pdf.js');
+      const html2pdf = (html2pdfModule as any).default || html2pdfModule;
+      
+      const elementToPrint = tempDiv.querySelector('.report-body') || tempDiv;
+
+      const pdfBase64 = await html2pdf().from(elementToPrint).set({
+        margin: [10, 0, 10, 0],
+        filename: 'report.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, backgroundColor: '#09090b' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).outputPdf('datauristring');
+
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE}/api/report/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ pdfBase64, filename: `Azure_Security_Report_${selectedNode.label}.pdf` })
+      });
+      
+      if (response.ok) {
+        setToast({ message: "Report has been sent to your email", type: "success" });
+      } else {
+        setToast({ message: "Failed to send report. Try again", type: "error" });
+      }
+    } catch (e) {
+      console.error('Email report error:', e);
+      setToast({ message: "Failed to send report. Try again", type: "error" });
+    } finally {
+      setSendingEmail(false);
+      setTimeout(() => setToast(null), 5000);
+    }
+  };
+
   return (
     <aside className="w-full h-full glass bg-card/80 flex flex-col shadow-2xl relative z-20">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={cn(
+          "absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg border shadow-xl backdrop-blur-md transition-all",
+          toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+        )}>
+          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+          <span className="text-sm font-medium">{toast.message}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <div>
@@ -326,13 +390,24 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
             <div className="p-4 border-t border-white/10 flex gap-2">
               <button
                 onClick={downloadReport}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-all border border-primary/20"
+                title="Download Report locally"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-medium transition-all border border-primary/20"
               >
-                <FileDown className="w-4 h-4" /> Download Report
+                <FileDown className="w-4 h-4 shrink-0" /> Download
+              </button>
+              <button
+                onClick={emailReport}
+                disabled={sendingEmail}
+                title="Email PDF Report"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg text-xs font-medium transition-all border border-indigo-500/20 disabled:opacity-50"
+              >
+                {sendingEmail ? <div className="animate-spin w-4 h-4 border-2 border-indigo-400/20 border-t-indigo-400 rounded-full shrink-0" /> : <Mail className="w-4 h-4 shrink-0" />}
+                {sendingEmail ? 'Sending...' : 'Email Report'}
               </button>
               <button
                 onClick={handleReset}
-                className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-all border border-white/10"
+                title="Reset View"
+                className="flex items-center justify-center py-2.5 px-3.5 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all border border-white/10 shrink-0"
               >
                 <RotateCcw className="w-4 h-4" />
               </button>
@@ -375,29 +450,29 @@ function generateReport(result: SimulationResult, startNode: { label: string; ty
 <meta charset="UTF-8"/>
 <title>AzureThreatMap Report</title>
 <style>
-  body{font-family:system-ui,sans-serif;background:#09090b;color:#fafafa;padding:40px;max-width:900px;margin:0 auto}
-  h1{color:#3b82f6;font-size:1.8rem}
-  h2{color:#a1a1aa;font-size:1rem;text-transform:uppercase;letter-spacing:0.1em;margin-top:2rem}
-  h3{color:#fafafa;font-size:1.1rem}
-  table{width:100%;border-collapse:collapse;margin-bottom:1rem}
-  td,th{padding:8px 12px;border:1px solid #27272a;text-align:left}
-  th{background:#18181b}
-  .score{font-size:3rem;font-weight:bold;color:#ef4444}
-  .step,.rec{background:#18181b;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #27272a}
-  .badge{background:#27272a;padding:2px 8px;border-radius:99px;font-size:0.75rem;margin-left:6px}
-  .rec.critical{border-color:#ef4444}
-  .rec.high{border-color:#f97316}
-  .rec.medium{border-color:#eab308}
-  .rec-severity{font-weight:bold;text-transform:uppercase;font-size:0.75rem;margin-bottom:6px}
-  .rec.critical .rec-severity{color:#ef4444}
-  .rec.high .rec-severity{color:#f97316}
-  .rec.medium .rec-severity{color:#eab308}
-  ul{padding-left:1.5rem}
-  li{margin-bottom:4px}
-  @media print{body{background:white;color:black}}
+  .report-body{font-family:system-ui,sans-serif;background:#09090b;color:#fafafa;padding:40px;max-width:900px;margin:0 auto;box-sizing:border-box;}
+  .report-body h1{color:#3b82f6;font-size:1.8rem;margin-top:0;}
+  .report-body h2{color:#a1a1aa;font-size:1rem;text-transform:uppercase;letter-spacing:0.1em;margin-top:2rem}
+  .report-body h3{color:#fafafa;font-size:1.1rem;margin-top:0;}
+  .report-body table{width:100%;border-collapse:collapse;margin-bottom:1rem;page-break-inside:avoid;}
+  .report-body td, .report-body th{padding:8px 12px;border:1px solid #27272a;text-align:left}
+  .report-body th{background:#18181b}
+  .report-body .score{font-size:3rem;font-weight:bold;color:#ef4444}
+  .report-body .step, .report-body .rec{background:#18181b;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #27272a;page-break-inside:avoid;}
+  .report-body .badge{background:#27272a;padding:2px 8px;border-radius:99px;font-size:0.75rem;margin-left:6px;display:inline-block;}
+  .report-body .rec.critical{border-color:#ef4444}
+  .report-body .rec.high{border-color:#f97316}
+  .report-body .rec.medium{border-color:#eab308}
+  .report-body .rec-severity{font-weight:bold;text-transform:uppercase;font-size:0.75rem;margin-bottom:6px}
+  .report-body .rec.critical .rec-severity{color:#ef4444}
+  .report-body .rec.high .rec-severity{color:#f97316}
+  .report-body .rec.medium .rec-severity{color:#eab308}
+  .report-body ul{padding-left:1.5rem;margin-top:8px;}
+  .report-body li{margin-bottom:6px}
 </style>
 </head>
-<body>
+<body style="background-color:#09090b;margin:0;padding:0;">
+<div class="report-body">
 <h1>⚡ AzureThreatMap Report</h1>
 <p style="color:#a1a1aa">Generated: ${date}</p>
 <p>Compromised Entity: <strong>${startNode.label}</strong> <span class="badge">${startNode.type}</span></p>
@@ -417,6 +492,7 @@ ${recsHtml}
 
 <hr style="border-color:#27272a;margin-top:2rem"/>
 <p style="color:#a1a1aa;font-size:0.75rem">This report was generated by AzureThreatMap — for internal security use only.</p>
+</div>
 </body>
 </html>`;
 }

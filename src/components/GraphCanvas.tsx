@@ -212,6 +212,25 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'width': 2.5,
             'zIndex': 998
           }
+        },
+        {
+          selector: '.attacker-node',
+          style: {
+            'shape': 'ellipse',
+            'background-color': '#000000',
+            'label': '💀',
+            'font-size': '20px',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'width': 24,
+            'height': 24,
+            'border-width': 2,
+            'border-color': '#ef4444',
+            'shadow-blur': 25,
+            'shadow-color': '#ef4444',
+            'shadow-opacity': 1.0,
+            'z-index': 9999
+          } as any
         }
       ],
       userZoomingEnabled: true,
@@ -342,6 +361,9 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
     if (!cyRef.current) return;
     const cy = cyRef.current;
 
+    // Remove any leftover attacker nodes
+    cy.elements('.attacker-node').remove();
+
     // Reset styles
     cy.elements().removeClass('highlighted-node highlighted-edge dimmed selected-node scan-critical scan-high scan-medium scan-low scan-edge-critical scan-edge-high');
     
@@ -369,6 +391,65 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
           edge.addClass('dimmed');
         }
       });
+
+      // Build adjacency list for paths
+      const adjList: Record<string, string[]> = {};
+      simulationResult.paths.forEach(edge => {
+        if (!adjList[edge.source]) adjList[edge.source] = [];
+        adjList[edge.source].push(edge.target);
+      });
+
+      let attackerCounter = 0;
+      const animateAttacker = (sourceId: string) => {
+        const sourceNode = cy.getElementById(sourceId);
+        if (!sourceNode || sourceNode.empty()) return;
+
+        const targets = adjList[sourceId];
+        if (!targets || targets.length === 0) return; // End of path reached
+
+        targets.forEach(targetId => {
+          const targetNode = cy.getElementById(targetId);
+          if (!targetNode || targetNode.empty()) return;
+
+          const attackerId = `attacker_${sourceId}_${targetId}_${attackerCounter++}`;
+          
+          try {
+            // Spawn temporary attacker node
+            const attacker = cy.add({
+              group: 'nodes',
+              data: { id: attackerId },
+              position: { ...sourceNode.position() },
+              classes: 'attacker-node'
+            });
+
+            // Animate to target
+            attacker.animate({
+              position: { ...targetNode.position() }
+            }, {
+              duration: 1500,
+              easing: 'linear',
+              complete: () => {
+                // Remove attacker after reaching target
+                attacker.remove();
+                
+                // Visual pulse on the target node
+                targetNode.flashClass('scan-critical', 400);
+
+                // Continue traversal
+                animateAttacker(targetId);
+              }
+            });
+          } catch (e) {
+            console.error('Animation error', e);
+          }
+        });
+      };
+
+      // Start the animation sequence after a brief delay
+      setTimeout(() => {
+        animateAttacker(simulationResult.compromisedNodeId);
+      }, 500);
+
     } else if (scanResult && scanResult.length > 0) {
       // Highlight Live Scan Results
       
