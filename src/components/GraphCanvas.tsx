@@ -115,10 +115,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'border-width': 4,
             'border-color': '#ef4444', // destructive color for blast radius
             'background-color': '#ef4444',
-            'shadow-blur': 20,
-            'shadow-color': '#ef4444',
-            'shadow-opacity': 0.8
-          } as any
+          }
         },
         {
           selector: '.highlighted-edge',
@@ -147,11 +144,8 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
           style: {
             'border-width': 4,
             'border-color': '#a78bfa',
-            'shadow-blur': 20,
-            'shadow-color': '#a78bfa',
-            'shadow-opacity': 1.0,
             'opacity': 1.0,
-          } as any
+          }
         },
         {
           selector: '.search-dimmed',
@@ -163,10 +157,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'border-width': 4,
             'border-color': '#ef4444',
             'background-color': '#ef4444',
-            'shadow-blur': 25,
-            'shadow-color': '#ef4444',
-            'shadow-opacity': 0.9
-          } as any
+          }
         },
         {
           selector: '.scan-high',
@@ -174,10 +165,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'border-width': 3,
             'border-color': '#f97316',
             'background-color': '#f97316',
-            'shadow-blur': 15,
-            'shadow-color': '#f97316',
-            'shadow-opacity': 0.8
-          } as any
+          }
         },
         {
           selector: '.scan-medium',
@@ -226,9 +214,6 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             'height': 24,
             'border-width': 2,
             'border-color': '#ef4444',
-            'shadow-blur': 25,
-            'shadow-color': '#ef4444',
-            'shadow-opacity': 1.0,
             'z-index': 9999
           } as any
         }

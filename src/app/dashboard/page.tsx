@@ -30,11 +30,14 @@ export default function Dashboard() {
   if (!user) return null; // Redirect handled by AuthContext
 
   return (
-    <div className={`flex-1 flex w-full relative min-h-0 ${devToolsPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}>
+    <div
+      className={`flex-1 flex w-full relative min-h-0 overflow-x-hidden ${devToolsPosition === 'bottom' ? 'flex-col' : 'flex-row'}`}
+      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+    >
       {/* Graph Visualization */}
-      <div className="flex-1 relative bg-[#09090b]/40 min-h-[300px] md:min-h-0">
-        <GraphCanvas 
-          selectedNodeId={selectedNodeId} 
+      <div className="flex-1 relative bg-[#09090b]/40 min-h-[300px] md:min-h-0 overflow-hidden">
+        <GraphCanvas
+          selectedNodeId={selectedNodeId}
           onNodeSelect={setSelectedNodeId}
           simulationResult={simulationResult}
           scanResult={scanResult}
@@ -43,19 +46,24 @@ export default function Dashboard() {
 
       {/* Simulation Panel */}
       {devToolsPosition !== 'hidden' && (
-        <div className={`
-          flex-shrink-0 border-white/5 overflow-y-auto transition-all duration-300
-          ${devToolsPosition === 'right' ? 'w-full md:w-72 lg:w-80 border-t md:border-t-0 md:border-l' : 'h-1/3 w-full border-t'}
-        `}>
-          <SimulatePanel 
-            selectedNodeId={selectedNodeId} 
+        <div
+          className={`
+          flex-shrink-0 border-white/5 overflow-y-auto overflow-x-hidden transition-all duration-300
+          ${devToolsPosition === 'right'
+              ? 'w-full md:w-72 lg:w-80 border-t md:border-t-0 md:border-l'
+              : 'h-1/3 w-full border-t'}
+        `}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <SimulatePanel
+            selectedNodeId={selectedNodeId}
             onSimulationComplete={(res) => {
               setSimulationResult(res);
-              setScanResult(null); // Clear scan when simulating
+              setScanResult(null);
             }}
             onScanComplete={(res) => {
               setScanResult(res);
-              setSimulationResult(null); // Clear simulation when scanning
+              setSimulationResult(null);
             }}
             scanResult={scanResult}
             onReset={() => {
