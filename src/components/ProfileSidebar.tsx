@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, User, Mail, Calendar, Clock, Key, Lock, ShieldCheck,
   ChevronRight, Loader2, Eye, EyeOff, CheckCircle2, Zap,
-  Trash2, AlertTriangle, Edit2, Save
+  Trash2, AlertTriangle, Edit2, Save, LogOut
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -42,7 +42,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [sps, setSps] = useState<ServicePrincipal[]>([]);
   const [loading, setLoading] = useState(false);
   const [spLoading, setSpLoading] = useState<string | null>(null);
-  const { refreshUser } = useAuth();
+  const { refreshUser, logout } = useAuth();
 
   // Delete dialog
   const [deleteTarget, setDeleteTarget] = useState<ServicePrincipal | null>(null);
@@ -62,6 +62,9 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [editName, setEditName] = useState("");
   const [editNameMsg, setEditNameMsg] = useState({ type: "", text: "" });
   const [savingName, setSavingName] = useState(false);
+
+  // Logout confirmation
+  const [logoutConfirm, setLogoutConfirm] = useState(false);
 
   const authHeader = () => ({
     "Content-Type": "application/json",
@@ -337,6 +340,42 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
                         <InfoCard icon={Clock} label="Trial Days" value={`${profile.subscriptionDays} days left`} highlight={profile.subscriptionDays <= 3} />
                         <InfoCard icon={Calendar} label="Member Since"
                           value={new Date(profile.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} />
+
+                        {/* Logout Button */}
+                        <AnimatePresence mode="wait">
+                          {logoutConfirm ? (
+                            <motion.div
+                              key="confirm"
+                              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                              className="flex gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20"
+                            >
+                              <p className="text-xs text-red-300 flex-1 self-center">Are you sure you want to log out?</p>
+                              <button
+                                onClick={() => setLogoutConfirm(false)}
+                                className="px-3 py-1.5 text-xs rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => { onClose(); logout(); }}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 hover:bg-red-500 text-white font-medium transition-all flex items-center gap-1"
+                              >
+                                <LogOut size={12} />
+                                Log out
+                              </button>
+                            </motion.div>
+                          ) : (
+                            <motion.button
+                              key="trigger"
+                              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                              onClick={() => setLogoutConfirm(true)}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-white/10 text-slate-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/5 transition-all text-sm font-medium"
+                            >
+                              <LogOut size={15} />
+                              Log Out
+                            </motion.button>
+                          )}
+                        </AnimatePresence>
                       </div>
                     )}
 

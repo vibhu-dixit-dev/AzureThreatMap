@@ -115,6 +115,15 @@ body {
   color: rgba(0, 0, 0, 0.02);
 }
 
+/* ── Hide scrollbars globally (scroll still works) ── */
+* {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE / Edge legacy */
+}
+*::-webkit-scrollbar {
+  display: none;                /* Chrome / Safari / modern Edge */
+}
+
 @layer utilities {
   .glass {
     @apply bg-background/50 backdrop-blur-xl border border-white/5 shadow-2xl;
