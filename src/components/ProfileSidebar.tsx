@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, User, Mail, Calendar, Clock, Key, Lock, ShieldCheck,
   ChevronRight, Loader2, Eye, EyeOff, CheckCircle2, Zap,
-  Trash2, AlertTriangle, Edit2, Save, LogOut
+  Trash2, AlertTriangle, Edit2, Save, LogOut, PowerOff
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -42,6 +42,7 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
   const [sps, setSps] = useState<ServicePrincipal[]>([]);
   const [loading, setLoading] = useState(false);
   const [spLoading, setSpLoading] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const { refreshUser, logout } = useAuth();
 
   // Delete dialog
@@ -116,6 +117,25 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
       console.error("Failed to connect SP:", err);
     } finally {
       setSpLoading(null);
+    }
+  };
+
+  const handleDisconnect = async (sp: ServicePrincipal) => {
+    setDisconnecting(sp._id);
+    try {
+      const res = await fetch(`${BACKEND_SP}/reset-active`, {
+        method: "POST",
+        headers: authHeader(),
+      });
+      if (res.ok) {
+        await fetch("/api/environment/reset", { method: "POST" });
+        setSps(prev => prev.map(s => ({ ...s, isActive: false })));
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("Failed to disconnect SP:", err);
+    } finally {
+      setDisconnecting(null);
     }
   };
 
@@ -420,9 +440,15 @@ export default function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps)
                                   </button>
                                 )}
                                 {sp.isActive && (
-                                  <div className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
-                                    <CheckCircle2 size={13} /> Connected
-                                  </div>
+                                  <>
+                                    <div className="flex-[0.5] flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
+                                      <CheckCircle2 size={13} /> Connected
+                                    </div>
+                                    <button onClick={() => handleDisconnect(sp)} disabled={disconnecting === sp._id}
+                                      className="flex-[0.5] flex items-center justify-center gap-1.5 py-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs font-medium border border-orange-500/20 transition-all">
+                                      {disconnecting === sp._id ? <Loader2 size={13} className="animate-spin" /> : <PowerOff size={13} />} Disconnect
+                                    </button>
+                                  </>
                                 )}
                                 <button onClick={() => setDeleteTarget(sp)}
                                   className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all">
