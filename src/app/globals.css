@@ -52,6 +52,7 @@
   /* Scaling Defaults */
   --spacing-scale: 1;
   --font-scale: 1;
+  --grid-color: rgba(148, 163, 184, 0.15);
 }
 
 .light {
@@ -74,6 +75,7 @@
   --border: #e4e4e7;
   --input: #f4f4f5;
   --ring: #2563eb;
+  --grid-color: rgba(148, 163, 184, 0.16);
 }
 
 [data-size="compact"] {
@@ -101,18 +103,10 @@ body {
   font-family: var(--font-inter), sans-serif;
   overflow-x: hidden;
   background-image:
-    linear-gradient(to right, currentColor 1px, transparent 1px),
-    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
   background-size: calc(32px * var(--spacing-scale)) calc(32px * var(--spacing-scale));
   opacity: 1;
-}
-
-.dark body {
-  color: rgba(255, 255, 255, 0.02);
-}
-
-.light body {
-  color: rgba(0, 0, 0, 0.02);
 }
 
 /* ── Hide scrollbars globally (scroll still works) ── */

@@ -488,9 +488,9 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
   return (
     <div className="w-full h-full relative">
       {/* ─── Search Bar Overlay ─── */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-md px-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-lg px-4">
+        <div className="relative rounded-2xl border border-cyan-500/10 bg-slate-950/45 p-0.5 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-500/50 pointer-events-none" />
           <input
             ref={searchRef}
             type="text"
@@ -498,12 +498,13 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
             onChange={e => setSearchTerm(e.target.value)}
             onFocus={() => searchTerm && setShowDropdown(searchResults.length > 0)}
             placeholder="Search resources, users, VMs, storage..."
-            className="w-full pl-9 pr-8 py-2 text-sm bg-black/60 backdrop-blur-md border border-white/10 rounded-xl text-white placeholder:text-muted-foreground focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30 shadow-lg transition-all"
+            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-[0.875rem] bg-slate-950/70 border border-white/[0.06] text-white placeholder:text-muted-foreground focus:outline-none focus:border-cyan-500/35 focus:ring-1 focus:ring-cyan-500/20 transition-all"
           />
           {searchTerm && (
             <button
+              type="button"
               onClick={clearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-cyan-200/90 transition-colors p-1 rounded-md hover:bg-white/5"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -512,16 +513,17 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
 
         {/* Dropdown results */}
         {showDropdown && (
-          <div className="absolute top-full mt-1 left-4 right-4 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-            <div className="px-3 py-1.5 border-b border-white/5">
-              <span className="text-[10px] text-muted-foreground">{searchResults.length} match{searchResults.length !== 1 ? 'es' : ''}</span>
+          <div className="absolute top-full mt-2 left-4 right-4 bg-slate-950/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-cyan-500/10">
+            <div className="px-3 py-1.5 border-b border-white/[0.06] bg-slate-950/80">
+              <span className="text-[10px] font-mono text-muted-foreground">{searchResults.length} match{searchResults.length !== 1 ? 'es' : ''}</span>
             </div>
             <ul className="max-h-52 overflow-y-auto">
               {searchResults.map(r => (
                 <li key={r.id}>
                   <button
+                    type="button"
                     onClick={() => selectResult(r.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/5 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-cyan-500/[0.06] transition-colors text-left"
                   >
                     <div
                       className="w-2 h-2 rounded-full flex-shrink-0"
@@ -542,7 +544,7 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       <div
         ref={containerRef}
         className="w-full h-full"
-        style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '24px 24px' }}
+        style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(34,211,238,0.07) 1px, transparent 0)', backgroundSize: '28px 28px' }}
       />
       {!data && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -550,14 +552,14 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
         </div>
       )}
 
-      {/* Legend overlay */}
-      <div className="absolute bottom-3 left-3 glass-card p-2 rounded-md flex flex-col gap-1.5 pointer-events-none z-10">
-        <h4 className="text-[10px] font-semibold text-white mb-0.5 uppercase tracking-wider">Legend</h4>
-        <div className="flex flex-wrap gap-x-3 gap-y-1.5 max-w-[320px]">
+      {/* Legend overlay — compact grid for scale */}
+      <div className="absolute bottom-3 left-3 z-10 max-w-[min(100%,22rem)] pointer-events-none rounded-xl border border-white/[0.06] bg-slate-950/75 px-3 py-2 shadow-[0_16px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
+        <h4 className="text-[9px] font-semibold text-cyan-200/80 mb-1.5 uppercase tracking-[0.18em] font-mono">Node types</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1">
           {Object.entries(typeColors).map(([type, color]) => (
-            <div key={type} className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-[10px] text-muted-foreground">{type}</span>
+            <div key={type} className="flex items-center gap-1.5 min-w-0">
+              <div className="w-2 h-2 rounded-full shrink-0 ring-1 ring-white/10" style={{ backgroundColor: color }} />
+              <span className="text-[9px] text-muted-foreground truncate">{type}</span>
             </div>
           ))}
         </div>
@@ -566,15 +568,15 @@ export default function GraphCanvas({ selectedNodeId, onNodeSelect, simulationRe
       {/* Hover Tooltip for Scans */}
       {tooltip && (
         <div 
-          className="absolute z-50 pointer-events-none glass-card p-3 rounded-xl border border-white/20 shadow-2xl bg-black/80 backdrop-blur-md min-w-[200px] max-w-[250px]"
+          className="absolute z-50 pointer-events-none p-3 rounded-xl border border-cyan-500/20 shadow-[0_20px_60px_rgba(0,0,0,0.5)] bg-slate-950/95 backdrop-blur-md min-w-[200px] max-w-[250px] ring-1 ring-white/[0.04]"
           style={{ 
             left: tooltip.x + 15, 
             top: tooltip.y + 15, 
             transform: 'translate(0, 0)'
           }}
         >
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-            <Radar className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/[0.08]">
+            <Radar className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="text-xs font-semibold text-white truncate">{tooltip.nodeLabel}</span>
           </div>
           <div className="space-y-1.5">

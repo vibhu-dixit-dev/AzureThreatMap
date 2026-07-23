@@ -90,7 +90,7 @@ export default function Sidebar({ onImportClick, identity }: SidebarProps) {
             <ShieldAlert className="w-5 h-5 text-white" />
           </div>
           <span className="hidden md:block ml-3 font-heading font-bold text-lg text-white tracking-wide">
-            AzureThreatMap
+            ThreatMap
           </span>
         </Link>
 

@@ -149,73 +149,84 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
   };
 
   return (
-    <aside className="w-full h-full glass bg-card/80 flex flex-col shadow-2xl relative z-20">
+    <aside className="w-full h-full flex flex-col relative z-20 bg-gradient-to-b from-slate-950/95 via-card/90 to-slate-950/95 border-l border-white/[0.04] shadow-[inset_1px_0_0_rgba(34,211,238,0.06)]">
       {/* Toast Notification */}
       {toast && (
         <div className={cn(
-          "absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg border shadow-xl backdrop-blur-md transition-all",
-          toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'
+          "absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 rounded-lg border shadow-xl backdrop-blur-md transition-all max-w-[min(100%,20rem)]",
+          toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300' : 'bg-red-500/10 border-red-500/25 text-red-300'
         )}>
-          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-          <span className="text-sm font-medium">{toast.message}</span>
+          {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
+          <span className="text-xs font-medium leading-snug">{toast.message}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-heading font-semibold text-white flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-primary" />
-            Security Center
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">Simulate attack paths or scan environment.</p>
+      {/* Header — title + dedicated action rail (scales when more controls are added) */}
+      <div className="shrink-0 border-b border-cyan-500/10 bg-slate-950/40 px-3 py-3 md:px-4 md:py-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-sm md:text-[15px] font-heading font-semibold text-white flex items-center gap-2 tracking-tight">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-cyan-500/20 bg-cyan-500/5 text-cyan-300">
+                <ShieldAlert className="w-4 h-4" />
+              </span>
+              <span className="truncate">Operations console</span>
+            </h2>
+            <p className="text-[11px] md:text-xs text-muted-foreground mt-1.5 leading-relaxed pl-9 md:pl-0 md:ml-9">
+              Select a node to simulate paths, or run a live environment scan.
+            </p>
+          </div>
         </div>
-        <button
-          onClick={runScan}
-          disabled={scanning}
-          title="Run Real-time Security Scan"
-          className="p-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-colors disabled:opacity-50 relative group"
-        >
-          {scanning ? (
-            <div className="w-5 h-5 border-2 border-indigo-400/20 border-t-indigo-400 rounded-full animate-spin" />
-          ) : (
-            <>
-              <Radar className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <div className="absolute inset-0 bg-indigo-400/20 rounded-lg rounded-full animate-ping opacity-0 group-hover:opacity-100" style={{ animationDuration: '3s' }} />
-            </>
-          )}
-        </button>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={runScan}
+            disabled={scanning}
+            title="Run Real-time Security Scan"
+            className="inline-flex items-center gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.07] px-3 py-2 text-xs font-medium text-cyan-100 hover:bg-cyan-500/15 transition-colors disabled:opacity-50 relative group min-w-0"
+          >
+            {scanning ? (
+              <div className="w-4 h-4 border-2 border-cyan-400/25 border-t-cyan-300 rounded-full animate-spin shrink-0" />
+            ) : (
+              <Radar className="w-4 h-4 shrink-0 text-cyan-300 group-hover:scale-105 transition-transform" />
+            )}
+            <span className="font-mono tracking-wide text-[11px] uppercase">{scanning ? "Scanning…" : "Live scan"}</span>
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Empty state */}
         {!selectedNode && !result && !scanResult && (
-          <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-8">
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-              <Activity className="w-8 h-8 opacity-50" />
+          <div className="h-full min-h-[12rem] flex flex-col items-center justify-center text-center text-muted-foreground px-6 py-10">
+            <div className="w-14 h-14 rounded-2xl border border-white/10 bg-white/[0.03] flex items-center justify-center mb-4 shadow-[0_0_40px_rgba(34,211,238,0.06)]">
+              <Activity className="w-7 h-7 text-cyan-400/50" />
             </div>
-            <p className="text-sm">Click on any node in the graph to begin simulation, or click the radar icon to run a security scan.</p>
+            <p className="text-xs md:text-sm leading-relaxed max-w-sm">
+              Select a graph node to run an attack simulation, or start a <span className="text-cyan-200/90">live scan</span> from the toolbar.
+            </p>
           </div>
         )}
 
         {/* Scan Results Base View (no node selected, just scanned) */}
         {!selectedNode && !result && scanResult && (
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <Radar className="w-4 h-4 text-indigo-400" />
-              <h3 className="text-sm font-semibold text-white">Scan Complete</h3>
+          <div className="p-4 space-y-4">
+            <div className="rounded-xl border border-white/[0.06] bg-slate-950/50 p-3.5 shadow-inner">
+              <div className="flex items-center gap-2 mb-2">
+                <Radar className="w-4 h-4 text-cyan-400 shrink-0" />
+                <h3 className="text-sm font-semibold text-white tracking-tight">Scan complete</h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {scanResult.length} issues found. Open highlighted nodes on the map to investigate.
+              </p>
             </div>
-            <div className="text-sm text-muted-foreground mb-4">
-              {scanResult.length} issues found. Click highlighted nodes on the map to investigate.
-            </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-2">
               {['Critical', 'High', 'Medium', 'Low'].map(severity => {
                 const count = scanResult.filter(r => r.severity === severity).length;
                 if (count === 0) return null;
                 return (
-                  <div key={severity} className={cn("flex justify-between p-2 rounded-lg border", RISK_COLORS[severity as RiskLevel])}>
+                  <div key={severity} className={cn("flex justify-between items-center gap-2 px-3 py-2 rounded-lg border", RISK_COLORS[severity as RiskLevel])}>
                     <span className="text-xs font-semibold">{severity}</span>
-                    <span className="text-xs font-bold">{count}</span>
+                    <span className="text-xs font-mono font-bold tabular-nums">{count}</span>
                   </div>
                 );
               })}
@@ -226,27 +237,28 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
         {/* Target Selected */}
         {selectedNode && !result && (
           <div className="p-4 space-y-4">
-            <div className="glass-card p-3 rounded-lg border border-white/10 bg-white/5">
-              <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Selected Target</h3>
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <ShieldAlert className="w-4 h-4 text-primary" />
+            <div className="rounded-xl border border-white/[0.07] bg-slate-950/40 p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <h3 className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-2.5 font-semibold font-mono">Selected target</h3>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-4 h-4 text-cyan-300" />
                 </div>
-                <div>
-                  <div className="text-base font-medium text-white truncate max-w-[200px]">{selectedNode.label}</div>
-                  <div className="text-xs text-primary font-medium">{selectedNode.type}</div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-white truncate">{selectedNode.label}</div>
+                  <div className="text-[11px] text-cyan-300/90 font-mono mt-0.5">{selectedNode.type}</div>
                 </div>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={runSimulation}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-primary hover:bg-blue-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-primary/25 disabled:opacity-50 text-sm mb-4"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-medium transition-all shadow-[0_12px_40px_rgba(34,211,238,0.15)] disabled:opacity-50 disabled:shadow-none text-sm border border-white/10"
             >
               {loading
-                ? <><div className="animate-spin w-5 h-5 border-2 border-white/20 border-t-white rounded-full" /> Simulating...</>
-                : <><Play className="w-5 h-5" /> Run Attack Simulation</>
+                ? <><div className="animate-spin w-5 h-5 border-2 border-white/25 border-t-white rounded-full" /> Simulating...</>
+                : <><Play className="w-5 h-5 shrink-0" /> Run attack simulation</>
               }
             </button>
 
@@ -256,18 +268,18 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
               if (nodeFindings.length === 0) return null;
               
               return (
-                <div className="space-y-3 mt-4 border-t border-white/10 pt-4">
-                  <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
-                    <Radar className="w-3.5 h-3.5" /> Security Findings ({nodeFindings.length})
+                <div className="space-y-3 mt-4 border-t border-white/[0.06] pt-4">
+                  <h3 className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-semibold flex items-center gap-1.5 font-mono">
+                    <Radar className="w-3.5 h-3.5 text-cyan-400" /> Findings ({nodeFindings.length})
                   </h3>
                   {nodeFindings.map(finding => (
-                    <div key={finding.id} className={cn("p-3 rounded-lg border space-y-2", RISK_COLORS[finding.severity])}>
-                       <div className="flex justify-between items-start">
-                         <span className="text-xs font-bold">{finding.issue}</span>
-                         <span className="text-[10px] px-1.5 rounded-sm border bg-black/20 uppercase font-mono">{finding.severity}</span>
+                    <div key={finding.id} className={cn("p-3 rounded-xl border space-y-2", RISK_COLORS[finding.severity])}>
+                       <div className="flex justify-between items-start gap-2">
+                         <span className="text-xs font-bold leading-snug">{finding.issue}</span>
+                         <span className="text-[10px] px-1.5 rounded-sm border bg-black/25 uppercase font-mono shrink-0">{finding.severity}</span>
                        </div>
-                       <p className="text-[11px] opacity-90">{finding.description}</p>
-                       <div className="text-[10px] bg-black/10 p-1.5 rounded border border-white/5 mt-2">
+                       <p className="text-[11px] opacity-90 leading-relaxed">{finding.description}</p>
+                       <div className="text-[10px] bg-black/15 p-2 rounded-lg border border-white/[0.06] mt-1">
                          <strong>Fix:</strong> {finding.recommendation}
                        </div>
                     </div>
@@ -280,57 +292,67 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
 
         {/* Results */}
         {result && (
-          <div className="flex flex-col">
+          <div className="flex flex-col min-h-0">
             {/* Score Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-red-900/30 to-red-800/10 border-b border-red-500/20 p-4 text-center">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-400 to-yellow-400" />
-              <h3 className="text-[10px] font-semibold text-red-400 uppercase tracking-wider mb-0.5 flex items-center justify-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" /> Blast Radius Score
+            <div className="relative overflow-hidden border-b border-red-500/20 bg-gradient-to-br from-red-950/50 via-slate-950/80 to-slate-950 p-4 text-center">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(248,113,113,0.12),transparent_55%)]" />
+              <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-500 via-amber-400 to-cyan-400 opacity-90" />
+              <h3 className="relative text-[10px] font-semibold text-red-300/95 uppercase tracking-[0.2em] mb-1 flex items-center justify-center gap-1.5 font-mono">
+                <AlertTriangle className="w-3.5 h-3.5" /> Blast radius
               </h3>
-              <div className="flex items-end justify-center gap-1 mt-1">
-                <span className="text-4xl font-heading font-bold text-white">{result.totalRiskScore}</span>
-                <span className="text-xl text-muted-foreground mb-0.5">/ {result.maxScore}</span>
+              <div className="relative flex items-end justify-center gap-1 mt-0.5">
+                <span className="text-4xl font-heading font-bold text-white tabular-nums">{result.totalRiskScore}</span>
+                <span className="text-lg text-muted-foreground mb-1 font-mono">/ {result.maxScore}</span>
               </div>
-              <div className="mt-2 text-xs flex justify-center gap-2">
+              <div className="relative mt-2 text-[11px] text-muted-foreground font-mono">
                 {result.blastRadius?.length ?? 0} nodes reachable
               </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-white/10 px-4 gap-4">
-              {([["overview", "Overview"], ["steps", "Attack Steps"], ["recs", `Recs (${result.recommendations?.length ?? 0})`]] as const).map(([tab, label]) => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={cn("py-2.5 text-[11px] font-medium border-b-2 transition-colors",
-                    activeTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-white"
-                  )}>
-                  {label}
+            {/* Tabs — segmented control for clearer hierarchy */}
+            <div className="px-3 pt-3 pb-2">
+              <div className="flex rounded-lg border border-white/[0.06] bg-slate-950/60 p-0.5 gap-0.5">
+              {([["overview", "Overview"], ["steps", "Attack steps"], ["recs", `Recs (${result.recommendations?.length ?? 0})`]] as const).map(([tab, label]) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "flex-1 min-w-0 py-2 px-1.5 rounded-md text-[10px] sm:text-[11px] font-medium transition-colors text-center",
+                    activeTab === tab
+                      ? "bg-white/[0.08] text-cyan-50 shadow-[inset_0_0_0_1px_rgba(34,211,238,0.12)]"
+                      : "text-muted-foreground hover:text-white hover:bg-white/[0.04]"
+                  )}
+                >
+                  <span className="block truncate">{label}</span>
                 </button>
               ))}
+              </div>
             </div>
 
             {/* Tab content */}
-            <div className="p-4 space-y-4">
+            <div className="p-4 pt-2 space-y-4">
               {activeTab === "overview" && (
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(result.summary).filter(([, count]) => count > 0).map(([type, count]) => (
-                      <div key={type} className="glass-card bg-white/5 p-2 rounded-lg border border-white/5">
-                        <span className="text-xl font-semibold text-white">{count}</span>
-                        <span className="text-[10px] text-muted-foreground block truncate">{type}</span>
+                      <div key={type} className="rounded-lg border border-white/[0.06] bg-slate-950/50 p-2.5 shadow-inner">
+                        <span className="text-lg font-semibold text-white tabular-nums">{count}</span>
+                        <span className="text-[10px] text-muted-foreground block truncate mt-0.5">{type}</span>
                       </div>
                     ))}
                   </div>
 
                   <div className="space-y-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Top Risk Nodes</h3>
+                    <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground font-mono">Top risk nodes</h3>
                     {(result.blastRadius ?? [])
                       .filter(n => n.riskScore > 0)
                       .sort((a, b) => b.riskScore - a.riskScore)
                       .slice(0, 4)
                       .map(node => (
-                        <div key={node.id} className="flex items-center justify-between p-2.5 rounded-lg bg-white/5">
-                          <span className="text-sm text-white truncate max-w-[180px]">{node.label}</span>
-                          <span className={cn("text-xs px-2 py-0.5 rounded-full border font-medium", RISK_COLORS[nodeRiskLevel(node.riskScore)])}>
+                        <div key={node.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-white/[0.05] bg-white/[0.03]">
+                          <span className="text-sm text-white truncate min-w-0">{node.label}</span>
+                          <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0", RISK_COLORS[nodeRiskLevel(node.riskScore)])}>
                             {nodeRiskLevel(node.riskScore)}
                           </span>
                         </div>
@@ -386,31 +408,37 @@ export default function SimulatePanel({ selectedNodeId, onSimulationComplete, on
               )}
             </div>
 
-            {/* Footer Actions */}
-            <div className="p-4 border-t border-white/10 flex gap-2">
-              <button
-                onClick={downloadReport}
-                title="Download Report locally"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-medium transition-all border border-primary/20"
-              >
-                <FileDown className="w-4 h-4 shrink-0" /> Download
-              </button>
-              <button
-                onClick={emailReport}
-                disabled={sendingEmail}
-                title="Email PDF Report"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg text-xs font-medium transition-all border border-indigo-500/20 disabled:opacity-50"
-              >
-                {sendingEmail ? <div className="animate-spin w-4 h-4 border-2 border-indigo-400/20 border-t-indigo-400 rounded-full shrink-0" /> : <Mail className="w-4 h-4 shrink-0" />}
-                {sendingEmail ? 'Sending...' : 'Email Report'}
-              </button>
-              <button
-                onClick={handleReset}
-                title="Reset View"
-                className="flex items-center justify-center py-2.5 px-3.5 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all border border-white/10 shrink-0"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
+            {/* Footer Actions — grid keeps layout stable as more actions are added */}
+            <div className="mt-auto p-3 md:p-4 border-t border-white/[0.06] bg-slate-950/40">
+              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                <button
+                  type="button"
+                  onClick={downloadReport}
+                  title="Download Report locally"
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs font-medium transition-all border border-cyan-500/25 bg-cyan-500/[0.06] text-cyan-50 hover:bg-cyan-500/12 min-w-0"
+                >
+                  <FileDown className="w-4 h-4 shrink-0" />
+                  <span className="truncate">Download</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={emailReport}
+                  disabled={sendingEmail}
+                  title="Email PDF Report"
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs font-medium transition-all border border-blue-500/25 bg-blue-500/[0.06] text-blue-100 hover:bg-blue-500/12 disabled:opacity-50 min-w-0"
+                >
+                  {sendingEmail ? <div className="animate-spin w-4 h-4 border-2 border-blue-400/25 border-t-blue-300 rounded-full shrink-0" /> : <Mail className="w-4 h-4 shrink-0" />}
+                  <span className="truncate">{sendingEmail ? "Sending…" : "Email"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  title="Reset View"
+                  className="flex items-center justify-center py-2.5 px-3.5 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-white transition-all shrink-0"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         )}
